@@ -124,12 +124,26 @@ def setup_tray_icon(app):
     # Store the update function in the app
     app.update_tray_tooltip = update_icon
 
+    def copy_latest_transcription(icon, item) -> None:
+        """
+        Copies the most recent transcription to clipboard if available.
+        """
+        recent_texts = app.history.get_recent()
+        if recent_texts:
+            pyperclip.copy(recent_texts[0])
+
     def get_menu():
         # Dynamic menu that updates when called
         copy_menu = create_copy_menu(app)
         microphone_menu = create_microphone_menu(app)
 
         return pystray.Menu(
+            # ↓ This is now the default item, triggered on left-click.
+            pystray.MenuItem(
+                'Copy Last Transcription',
+                copy_latest_transcription,
+                default=True
+            ),
             pystray.MenuItem(
                 '🔄 Retry Last Transcription',
                 lambda icon, item: app.retry_transcription(),
@@ -171,6 +185,7 @@ def setup_tray_icon(app):
                     )
                 )
             ),
+            pystray.MenuItem('Restart', lambda icon, item: app.restart_app()),
             pystray.MenuItem('Exit', on_exit)
         )
 

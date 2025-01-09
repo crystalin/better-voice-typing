@@ -32,14 +32,22 @@ def setup_logging() -> logging.Logger:
 
     # Configure logging
     logger = logging.getLogger('voice_typing')
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     # File handler
     file_handler = logging.FileHandler(log_file)
     file_handler.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(formatter)
+
+    # Add console handler for real-time debugging
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.DEBUG)
+    console_formatter = logging.Formatter('%(levelname)s: %(message)s')  # Simpler format for console
+    console_handler.setFormatter(console_formatter)
+
     logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
 
     # Log system info at startup
     logger.info(f"Python version: {sys.version}")
@@ -353,6 +361,18 @@ class VoiceTypingApp:
         status = "enabled" if new_timeout is not None else "disabled"
         print(f"Silence detection {status}")
         self.logger.info(f"Silence detection {status}")
+
+    def restart_app(self) -> None:
+        """Restart the application by launching a new instance and closing the current one"""
+        self.logger.info("Restarting application...")
+        try:
+            # Start new instance of the app
+            os.startfile(sys.argv[0])
+            # Exit current instance
+            os._exit(0)
+        except Exception as e:
+            self.logger.error(f"Failed to restart application: {e}", exc_info=True)
+            self.status_manager.set_status(AppStatus.ERROR, "⚠️ Failed to restart")
 
 if __name__ == "__main__":
     app = VoiceTypingApp()

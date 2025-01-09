@@ -23,10 +23,14 @@ The app works as follows:
 - **Cancel Recording**: Click the recording indicator
 
 ### Tray Options/Settings
+- Left-click tray icon to copy last transcription
 - Recent Transcriptions: Access previous transcriptions, copy to clipboard
-- Continuous Capture: Default recording mode. Record audio until the user stops it, send it all at once to OpenAI Whisper
-- (beta) Clean Transcription: Enable/disable text cleaning using Anthropic Claude Haiku
-
+- Microphone Selection: Choose your preferred input device
+- Settings:
+  - Continuous Capture: Default recording mode. Record audio until the user stops it, send it all at once to OpenAI Whisper
+  - (beta) Clean Transcription: Enable/disable text cleaning using Anthropic Claude Haiku
+  - Auto-Stop on Silence: Automatically stop recording after a period of silence
+- Restart: Quickly restart the application, like when its not responding to the keyboard shortcut
 
 ### Tray History
 - Keeps track of recent transcriptions
@@ -40,7 +44,6 @@ The app works as follows:
 
 ## Current Limitations
 - Maximum recording duration of ~10 minutes per transcription due to OpenAI Whisper API's 25MB file size limit
-- Currently uses system default microphone with no in-app selection option
 
 ## Setup/Installation - For Users
 
@@ -92,10 +95,17 @@ To update to the latest version:
 - [x] Add microphone selection via system tray menu (currently locked to system default)
 - [x] Manual (later, auto) retry option for failed transcriptions via tray menu and using overlay (especially important for longer recordings)
 - [x] Add feature to auto-stop on complete silence, like when mic settings aren't configured properly.
-- [ ] Fix bug where the caps lock activation gets inverted where recording only starts on when caps lock is enabled. So need to record with caps lock enabled setting. While CTRL and CAPS still functions to toggle the caps lock.
+- [x] Left clicking on the taskbar icon should copy the most recently transcribed message to clipboard.
+- [x] Ability to restart the app via "Restart" option in the system tray menu.
 - [ ] Review and validate setup and installation process
+- [ ] Write tests for installation/update process
+- [ ] Update and improve README.md
+- [ ] Use a very fast and cheap LLM model to correct for grammatically wront sentence structures (due to pausing in speech) and ...-s
+- [ ] Improved transcription accuracy via VLM for code variables, proper nouns and abbreviations using screenshot context and cursor position
+
+## TODO - Future
+- [ ] Fix bug where the caps lock activation gets inverted where recording only starts on when caps lock is enabled. So need to record with caps lock enabled setting. While CTRL and CAPS still functions to toggle the caps lock.
 - [ ] Customizable activation shortcuts for recording control
-- [ ] Improved transcription accuracy for code variables, proper nouns and abbreviations using screenshot context and cursor position via VLM
 - [ ] Smart Capture: Record audio in 1-2 minute chunks with silence detection, process chunks with Whisper in background, then combine and clean results with an LLM
 
 ## Contributing
