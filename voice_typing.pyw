@@ -200,6 +200,7 @@ class VoiceTypingApp:
         """Helper method to handle recording stop logic"""
         self.recording = False
         self.recorder.stop()
+        self.logger.info("Recording stopped via keyboard shortcut")
 
         if self.recorder.was_auto_stopped():
             self.status_manager.set_status(
@@ -245,11 +246,12 @@ class VoiceTypingApp:
                 )
                 return
 
-            self.logger.info("Starting transcription")
             # Store recording path for retry functionality
             self.last_recording = self.recorder.filename
 
+            self.logger.info("Starting transcription")
             success, result = self._attempt_transcription()
+            self.logger.info("Finished transcription")
             if not success:
                 self.ui_feedback.show_error_with_retry("⚠️ Transcription failed")
                 self.status_manager.set_status(AppStatus.ERROR, "⚠️ Error processing audio")

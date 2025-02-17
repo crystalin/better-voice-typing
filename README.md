@@ -1,24 +1,22 @@
 # Voice Typing Assistant
 
-A lightweight Python desktop app for Windows that improves upon Windows Voice Typing (Win+H) by offering superior transcription accuracy while maintaining a simple, intuitive interface.
+A lightweight Python desktop app for Windows that improves upon Windows Voice Typing (Win+H) by offering superior transcription accuracy and the ability to navigate between windows while recording, all while maintaining a simple, intuitive interface.
 
 ![Voice Typing Demo](voice-typing-demo.gif)
 
 ## Overview
 
-The app works as follows:
+How it works:
 - Press Caps Lock to begin recording your voice (without activating Caps Lock)
-- A small red indicator appears in the top-right corner showing "🎤 Recording"
-- Audio level visualization shows your current input volume
+- A recording indicator with audio level appears in the top-right corner
 - Press Caps Lock again to stop recording and process the audio
 - The audio is sent to OpenAI Whisper for transcription
-- (beta, optional) The transcribed text is cleaned and inserted at the cursor location
-- The transcribed text is automatically inserted at your current cursor position in any text field or editor
-- Settings and recent transcriptions can be accessed via the system tray icon
+- (optional) The transcribed text is further refined using a quick LLM model
+- The transcribed text is inserted at your current cursor position in any text field or editor
 
 ## Features
 
-### Controls
+### RecordingControls
 - **Toggle Recording**: Caps Lock (normal Caps Lock functionality still available with Ctrl+Caps Lock)
 - **Cancel Recording**: Click the recording indicator
 
@@ -43,7 +41,7 @@ The app works as follows:
 - For now, only tested on Windows OS and Python 3.8+
 
 ## Current Limitations
-- Maximum recording duration of ~10 minutes per transcription due to OpenAI Whisper API's 25MB file size limit
+- ⚠️ Maximum recording duration of ~10 minutes per transcription due to OpenAI Whisper API's 25MB file size limit
 
 ## Setup/Installation - For Users
 
@@ -97,16 +95,18 @@ To update to the latest version:
 - [x] Add feature to auto-stop on complete silence, like when mic settings aren't configured properly.
 - [x] Left clicking on the taskbar icon should copy the most recently transcribed message to clipboard.
 - [x] Ability to restart the app via "Restart" option in the system tray menu.
+- [x] Use a very fast and cheap LLM model to correct for grammatically wront sentence structures (due to pausing in speech) and ...-s
+- [ ] Add support for other languages (currently only English is supported)
+- [ ] Migrate to `uv` for dependency and environment management
+- [ ] Some warning or auto-stop if recording duration is going to be too long (due to API limits)
 - [ ] Migrate to using LiteLLM as wrapper to support other LLM providers.
 - [ ] Handling for the `settings.json` file, so I'm not committing changes to mine.
 - [ ] Review and validate setup and installation process
 - [ ] Write tests for installation/update process
 - [ ] Update and improve README.md
-- [ ] Use a very fast and cheap LLM model to correct for grammatically wront sentence structures (due to pausing in speech) and ...-s
 - [ ] Improved transcription accuracy via VLM for code variables, proper nouns and abbreviations using screenshot context and cursor position
 
 ## TODO - Future
-- [ ] Fix bug where the caps lock activation gets inverted where recording only starts on when caps lock is enabled. So need to record with caps lock enabled setting. While CTRL and CAPS still functions to toggle the caps lock.
 - [ ] Customizable activation shortcuts for recording control
 - [ ] Smart Capture: Record audio in 1-2 minute chunks with silence detection, process chunks with Whisper in background, then combine and clean results with an LLM
 
