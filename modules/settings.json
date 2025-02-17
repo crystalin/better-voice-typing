@@ -1,7 +1,7 @@
 {
     "continuous_capture": true,
     "smart_capture": false,
-    "clean_transcription": false,
+    "clean_transcription": true,
     "selected_microphone": {
         "name": "Voicemeeter Out B1 (VB-Audio Vo",
         "channels": 2,

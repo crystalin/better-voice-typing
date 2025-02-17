@@ -28,7 +28,7 @@ The app works as follows:
 - Microphone Selection: Choose your preferred input device
 - Settings:
   - Continuous Capture: Default recording mode. Record audio until the user stops it, send it all at once to OpenAI Whisper
-  - (beta) Clean Transcription: Enable/disable text cleaning using Anthropic Claude Haiku
+  - Clean Transcription: Enable/disable further refinement of the transcription using Claude 3.5 Haiku
   - Auto-Stop on Silence: Automatically stop recording after a period of silence
 - Restart: Quickly restart the application, like when its not responding to the keyboard shortcut
 
@@ -97,6 +97,8 @@ To update to the latest version:
 - [x] Add feature to auto-stop on complete silence, like when mic settings aren't configured properly.
 - [x] Left clicking on the taskbar icon should copy the most recently transcribed message to clipboard.
 - [x] Ability to restart the app via "Restart" option in the system tray menu.
+- [ ] Migrate to using LiteLLM as wrapper to support other LLM providers.
+- [ ] Handling for the `settings.json` file, so I'm not committing changes to mine.
 - [ ] Review and validate setup and installation process
 - [ ] Write tests for installation/update process
 - [ ] Update and improve README.md
