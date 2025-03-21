@@ -46,15 +46,24 @@ How it works:
 ## Setup/Installation - For Users
 
 ### Quick Start (Windows)
-1. Make sure you have Python 3.8 or newer installed from [python.org](https://python.org)
-2. Download this project by clicking the green "Code" button above → "Download ZIP"
-3. Extract the ZIP file to a location of your choice
-4. Double-click the `setup.bat` file to automatically:
-   - Create a virtual environment
-   - Install required packages
+
+Requires Python 3.8 or higher (check with `python --version`) - get from [python.org](https://python.org)
+
+Requires `uv` CLI tool (https://docs.astral.sh/uv/getting-started/#installation)
+
+1. Download this project by clicking the green "Code" button above → "Download ZIP" or clone the repo
+2. Extract the ZIP file to a location of your choice
+3. Double-click the `setup.bat` file to automatically:
+   - Create a virtual environment using `uv`
+   - Install required packages with `uv`
    - Set up your configuration file
-5. When prompted, paste your OpenAI API key ([get one here](https://platform.openai.com/api-keys))
-6. Double-click `voice_typing.pyw` to start the app
+4. When prompted, paste your OpenAI API key ([get one here](https://platform.openai.com/api-keys))
+5. Double-click `voice_typing.pyw` to start the app
+6. If that doesn't work, you can also start the app from the command line:
+     ```
+     cd "path\to\better-voice-typing"
+     .\.venv\Scripts\python.exe .\voice_typing.pyw
+     ```
 7. **Important**: Ensure the app's tray icon is visible by right-clicking the taskbar → "Taskbar settings" → "Select which icons appear on the taskbar" → Toggle on for Voice Typing Assistant (the tray icon is the main interface for settings and status)
 8. **Recommended**: Right-click `voice_typing.pyw` → Send to → Desktop to create a shortcut
 
@@ -77,15 +86,18 @@ To update to the latest version:
 ## Setup/Installation - For Developers
 
 1. Clone the repo
-2. Create a virtual environment using `python -m venv venv`
-3. Run `venv\Scripts\activate` to activate the virtual environment
-4. Run `pip install -r requirements.txt` to install all dependencies
-5. Create a `.env` file based on `.env.example` by running `cp .env.example .env`
-6. Set up your API keys:
+2. Ensure you have `uv` installed (see [uv installation guide](https://docs.astral.sh/uv/getting-started/#installation))
+3. Run `setup.bat` or manually:
+   - Create a virtual environment with `uv venv --python ">=3.8"`
+   - Activate with `.venv\Scripts\activate`
+   - Install dependencies with `uv pip install -r requirements.txt`
+4. Create a `.env` file based on `.env.example` by running `cp .env.example .env`
+5. Set up your API keys:
    - Get an OpenAI API key from [OpenAI's API Keys page](https://platform.openai.com/api-keys)
    - (Optional) Get an Anthropic API key if you want to use the text cleaning feature
    - Add these keys to your `.env` file
-7. Run the app by double-clicking `voice_typing.pyw`, and add a shortcut to your startup folder to launch automatically on system boot
+6. Run the app by double-clicking `voice_typing.pyw`, and add a shortcut to your startup folder to launch automatically on system boot
+7. For debugging: Run with console by executing `python voice_typing.pyw` in PowerShell or Command Prompt with the virtual environment activated
 
 ## TODO
 - [x] Do not send audio to OpenAI if the audio is silent or too short (<2 seconds)
@@ -97,7 +109,7 @@ To update to the latest version:
 - [x] Ability to restart the app via "Restart" option in the system tray menu.
 - [x] Use a very fast and cheap LLM model to correct for grammatically wront sentence structures (due to pausing in speech) and ...-s
 - [ ] Add support for other languages (currently only English is supported)
-- [ ] Migrate to `uv` for dependency and environment management
+- [x] Migrate to `uv` for dependency and environment management
 - [ ] Some warning or auto-stop if recording duration is going to be too long (due to API limits)
 - [ ] Migrate to using LiteLLM as wrapper to support other LLM providers.
 - [ ] Handling for the `settings.json` file, so I'm not committing changes to mine.

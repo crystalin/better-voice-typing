@@ -78,14 +78,20 @@ def test_fresh_install() -> bool:
     user_input = "test-openai-key\ntest-anthropic-key\n"
     success = run_setup_bat(test_dir, user_input)
 
-    # Verify installation
-    venv_exists = (test_dir / "venv").exists()
+    # Verify installation - check for .venv directory
+    venv_exists = (test_dir / ".venv").exists()
     env_exists = (test_dir / ".env").exists()
 
+    # Check if uv created the proper venv structure
+    venv_scripts_exists = (test_dir / ".venv" / "Scripts").exists()
+    python_exists = (test_dir / ".venv" / "Scripts" / "python.exe").exists()
+
     print(f"Virtual environment created: {venv_exists}")
+    print(f"Virtual environment Scripts folder exists: {venv_scripts_exists}")
+    print(f"Python executable exists: {python_exists}")
     print(f"Environment file created: {env_exists}")
 
-    return success and venv_exists and env_exists
+    return success and venv_exists and env_exists and venv_scripts_exists and python_exists
 
 def test_update_process() -> bool:
     """Test the update process with existing user data."""
@@ -125,4 +131,4 @@ if __name__ == "__main__":
     print(f"Fresh Installation: {'✓' if fresh_install_success else '✗'}")
     print(f"Update Process: {'✓' if update_success else '✗'}")
 
-    sys.exit(0 if fresh_install_success and update_success else 1) 
+    sys.exit(0 if fresh_install_success and update_success else 1)

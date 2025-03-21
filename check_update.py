@@ -45,7 +45,7 @@ def download_and_extract(url: str, temp_dir: Path) -> bool:
         # List of files/folders to preserve
         preserve_items = [
             '.env',                    # API keys and user settings
-            'venv',                    # Virtual environment
+            '.venv',                   # Virtual environment created with uv
             'transcription_history',   # User's transcription history
             'user_settings.json',      # Any additional user settings
             'custom_shortcuts.json'    # Any custom keyboard shortcuts

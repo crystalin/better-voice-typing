@@ -1,16 +1,18 @@
 # Core functionality
 python-dotenv==1.0.1  # Environment variables
 pynput==1.7.6  # Keyboard shortcuts
-sounddevice==0.4.6  # Audio recording
+sounddevice==0.5.1  # Audio recording
 soundfile==0.12.1  # Audio file handling
 
-openai==1.51.2
-anthropic==0.36.1
-requests==2.31.0  # For update chec
+# AI
+litellm==1.63.12 # model routing
+openai==1.68.0
+anthropic==0.49.0
+requests==2.31.0  # For update check
 
 # UI and system interaction
 pyautogui==0.9.54  # Cursor/text manipulation
 pystray==0.19.5  # System tray icon
 Pillow==10.1.0  # Required by pystray for icons
-numpy==1.26.4
+numpy==2.0.2
 pyperclip==1.9.0

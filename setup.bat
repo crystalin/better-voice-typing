@@ -12,51 +12,50 @@ if errorlevel 1 (
 )
 
 REM Verify Python version is 3.8+
-for /f "tokens=2 delims=." %%I in ('python -c "import sys; print(sys.version.split()[0])"') do (
-    if %%I LSS 8 (
-        echo Error: Python 3.8 or newer is required
-        pause
-        exit /b 1
-    )
+for /f "tokens=2 delims=." %%I in ('python -c "import sys; print(sys.version.split()[0])"') do set PYVER=%%I
+if "%PYVER%" LSS "8" (
+    echo Error: Python 3.8 or newer is required
+    pause
+    exit /b 1
 )
 
-REM Verify pip installation
-python -m pip --version > nul 2>&1
+REM Check if uv is installed
+uv --version > nul 2>&1
 if errorlevel 1 (
-    echo Error: pip is not installed
+    echo Error: uv is not installed
+    echo Please install uv from https://docs.astral.sh/uv/getting-started/#installation
+    echo You can run: curl -sSf https://astral.sh/uv/install.ps1 ^| powershell
     pause
     exit /b 1
 )
 
 REM Check if this is an update or first install
-if exist venv (
+if exist .venv (
     echo Existing installation detected
     choice /C YN /M "Would you like to check for updates"
     if errorlevel 2 goto :SKIP_UPDATE
 
     echo Checking for updates...
-    call venv\Scripts\activate
+    call .venv\Scripts\activate.bat
     python check_update.py
     if errorlevel 1 (
         echo Update failed. Please try again later.
     ) else (
         echo Updating dependencies...
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        uv pip install -r requirements.txt
     )
     goto :END
 )
 
 :SKIP_UPDATE
 REM First time setup continues here...
-echo Creating virtual environment...
-python -m venv venv
+echo Creating virtual environment with uv...
+uv venv --python ">=3.8"
 
 REM Activate virtual environment and install requirements
-echo Installing required packages...
-call venv\Scripts\activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+echo Installing required packages with uv...
+call .venv\Scripts\activate
+uv pip install -r requirements.txt
 
 REM Create .env file if it doesn't exist
 if not exist .env (
@@ -80,4 +79,12 @@ if not exist .env (
 echo.
 echo Setup/Update complete! You can now run voice_typing.pyw to start the app.
 echo.
-pause 
+choice /C YN /M "Would you like to launch the application now"
+if errorlevel 2 goto :EXIT
+echo Launching Voice Typing Assistant...
+start pythonw voice_typing.pyw
+goto :EXIT
+
+:EXIT
+echo Exiting setup...
+pause
