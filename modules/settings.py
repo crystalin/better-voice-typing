@@ -11,7 +11,8 @@ class Settings:
             'clean_transcription': True,
             'selected_microphone': None,
             'favorite_microphones': [],
-            'silence_timeout': 3.0
+            'silence_timeout': 4.0,
+            'llm_model': "openai/gpt-4o-mini"
         }
         self.current_settings: Dict[str, Any] = self.load_settings()
         self._migrate_device_settings()
@@ -47,10 +48,21 @@ class Settings:
             if os.path.exists(self.settings_file):
                 with open(self.settings_file, 'r') as f:
                     return {**self.default_settings, **json.load(f)}
-            return self.default_settings.copy()
+            else:
+                # File doesn't exist, create it with default settings
+                self.save_defaults()
+                return self.default_settings.copy()
         except Exception as e:
             print(f"Error loading settings: {str(e)}")
             return self.default_settings.copy()
+
+    def save_defaults(self) -> None:
+        """Create settings file with default values if it doesn't exist"""
+        try:
+            with open(self.settings_file, 'w') as f:
+                json.dump(self.default_settings, f, indent=4)
+        except Exception as e:
+            print(f"Error creating default settings file: {str(e)}")
 
     def save_settings(self) -> None:
         try:

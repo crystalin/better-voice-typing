@@ -2,6 +2,9 @@
 # Project Specific
 ########################################################################
 
+# Application settings
+modules/settings.json
+
 # === Temporary files and directories ===
 temp/
 temp_audio.*
@@ -41,19 +44,6 @@ venv.bak/
 # === Common Windows Files ===
 Thumbs.db
 Desktop.ini
-
-########################################################################
-# Streamlit
-########################################################################
-.streamlit/
-lib/streamlit/static
-streamlit-storage
-
-# Data Files
-**/uber-raw-data-sep14.csv
-
-lib/Pipfile.lock
-
 
 ########################################################################
 # Python

@@ -1,12 +1,22 @@
-from .completion import get_anthropic_completion
 import logging
+import litellm
 
 # Get logger
 logger = logging.getLogger('voice_typing')
 
-def clean_transcription(text: str) -> str:
+# Aggressive silencing of LiteLLM logging
+# To work around a compatibility issue: LiteLLM and Python 3.12 (__annotations__ Access Error)
+logging.getLogger('LiteLLM').setLevel(logging.CRITICAL + 1)
+# see: https://github.com/BerriAI/litellm/issues/9424
+# and: https://github.com/BerriAI/litellm/issues/9432
+
+def clean_transcription(text: str, model: str) -> str:
     """
-    Cleans and corrects voice-to-text transcription using Anthropic's Claude model.
+    Cleans and corrects voice-to-text transcription using LLM models.
+
+    Args:
+        text: The raw transcription text to clean
+        model: The LLM model to use for cleaning
     """
     logger.info("ORIGINAL: %s", text)
 
@@ -52,11 +62,14 @@ IMPROVED: I guess I'm more looking for something that includes the word "Clockif
 Respond only with the corrected text, nothing else.
     """.strip().format(text)
 
-    cleaned_text = get_anthropic_completion(
+    response = litellm.completion(
+        model=model,
         messages=[{"role": "user", "content": prompt}],
-        model="claude-3-5-haiku-latest",
-        temperature=0.3
+        temperature=0.3,
+        num_retries=2
     )
+
+    cleaned_text = response.choices[0].message.content
 
     logger.info("IMPROVED: %s", cleaned_text)
     return cleaned_text

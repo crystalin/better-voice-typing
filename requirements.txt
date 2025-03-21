@@ -1,3 +1,5 @@
+# ⚠️ for adding new packages, add a locked version here and then run `uv pip install -r requirements.txt`
+
 # Core functionality
 python-dotenv==1.0.1  # Environment variables
 pynput==1.7.6  # Keyboard shortcuts
@@ -5,7 +7,7 @@ sounddevice==0.5.1  # Audio recording
 soundfile==0.12.1  # Audio file handling
 
 # AI
-litellm==1.63.12 # model routing
+litellm==1.63.11 # model routing
 openai==1.68.0
 anthropic==0.49.0
 requests==2.31.0  # For update check

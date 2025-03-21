@@ -273,7 +273,9 @@ class VoiceTypingApp:
         try:
             text = transcribe_audio(self.last_recording)
             if self.clean_transcription_enabled:
-                text = clean_transcription(text)
+                # Get the configured LLM model from settings
+                llm_model = self.settings.get('llm_model')
+                text = clean_transcription(text, model=llm_model)
             self.logger.info("Transcription completed successfully")
             return True, text
         except Exception as e:

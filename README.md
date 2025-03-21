@@ -69,6 +69,16 @@ How it works:
 7. Ensure the app's tray icon is visible by right-clicking the taskbar → "Taskbar settings" → "Select which icons appear on the taskbar" → Toggle on for Voice Typing Assistant (the tray icon is the main interface for settings and status)
 8. **Recommended**: Right-click `voice_typing.pyw` → Send to → Desktop to create a shortcut
 
+**(Optional) Configure a different model to use for transcript cleaning**
+
+- After running the app once, a `settings.json` file will be created
+- Open this file in Notepad or any text editor
+- Find the `"llm_model": "openai/gpt-4o-mini"` line
+- Set it to your [preferred provider/model](https://docs.litellm.ai/docs/providers), using the LiteLLM format `"provider/model-name"`, for example:
+   - For Grok: `"llm_model": "groq/llama3-8b-8192"`
+   - For Claude: `"llm_model": "anthropic/claude-3-5-haiku-latest"`
+- Save the file and restart the application
+
 ### Auto-start with Windows
 To make the app start automatically when Windows boots:
 1. Press `Win + R` on your keyboard
@@ -102,27 +112,26 @@ To update to the latest version:
 7. For debugging: Run with console by executing `python voice_typing.pyw` in PowerShell or Command Prompt with the virtual environment activated
 
 ## TODO
-- [x] Do not send audio to OpenAI if the audio is silent or too short (<2 seconds)
-- [x] Add visual status indicators via UI feedback indicator/overlay AND tray icon to show state (recording/processing/done/error)
-- [x] Add microphone selection via system tray menu (currently locked to system default)
-- [x] Manual (later, auto) retry option for failed transcriptions via tray menu and using overlay (especially important for longer recordings)
-- [x] Add feature to auto-stop on complete silence, like when mic settings aren't configured properly.
-- [x] Left clicking on the taskbar icon should copy the most recently transcribed message to clipboard.
-- [x] Ability to restart the app via "Restart" option in the system tray menu.
-- [x] Use a very fast and cheap LLM model to correct for grammatically wront sentence structures (due to pausing in speech) and ...-s
-- [ ] Add support for other languages (currently only English is supported)
 - [x] Migrate to `uv` for dependency and environment management
+- [x] Migrate to LiteLLM as wrapper to support other LLM providers.
+- [x] Handling for the `settings.json` file, so I'm not committing changes to mine.
+- [x] Review and validate setup and installation process
+- [ ] Add support for OpenAI's [new audio models](https://platform.openai.com/docs/guides/audio)
+- [ ] Add support for more speech-to-text providers (might be possible via LiteLLM?)
 - [ ] Some warning or auto-stop if recording duration is going to be too long (due to API limits)
-- [ ] Migrate to using LiteLLM as wrapper to support other LLM providers.
-- [ ] Handling for the `settings.json` file, so I'm not committing changes to mine.
-- [ ] Review and validate setup and installation process
-- [ ] Write tests for installation/update process
 - [ ] Update and improve README.md
-- [ ] Improved transcription accuracy via VLM for code variables, proper nouns and abbreviations using screenshot context and cursor position
-
-## TODO - Future
 - [ ] Customizable activation shortcuts for recording control
-- [ ] Smart Capture: Record audio in 1-2 minute chunks with silence detection, process chunks with Whisper in background, then combine and clean results with an LLM
+- [ ] Improved transcription accuracy via VLM for code variables, proper nouns and abbreviations using screenshot context and cursor position
+- [ ] ~~Smart Capture: Record audio in 1-2 minute chunks with silence detection, process chunks with Whisper in background, then combine and clean results with an LLM~~
+
+## Changelog
+
+### v0.5.1 (2025-03-21)
+- Added version tracking and changelog
+- You now just need an OpenAI API key for full functionality
+- Migrated to LiteLLM for multi-provider/model support: you can use any model you want for text cleaning
+- Fixed settings.json initialization and handling
+- Fixed `setup.bat` based setup process, improved error handling
 
 ## Contributing
 
