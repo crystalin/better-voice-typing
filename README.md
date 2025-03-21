@@ -60,14 +60,9 @@ How it works:
 4. Open the `.env` file in Notepad, update the following and save:
    - OpenAI API key ([get one here](https://platform.openai.com/api-keys))
    - (Optional) Anthropic API key for text cleaning
-5. Double-click `voice_typing.pyw` to start the app
-6. If it doesn't start (working on fixing this), you can also start the app from the command line:
-     ```
-     cd "path\to\better-voice-typing"
-     .\.venv\Scripts\python.exe .\voice_typing.pyw
-     ```
-7. Ensure the app's tray icon is visible by right-clicking the taskbar → "Taskbar settings" → "Select which icons appear on the taskbar" → Toggle on for Voice Typing Assistant (the tray icon is the main interface for settings and status)
-8. **Recommended**: Right-click `voice_typing.pyw` → Send to → Desktop to create a shortcut
+5. Launch the application by double-clicking the `run_voice_typing.bat` file in the application folder
+6. Ensure the app's tray icon is visible by right-clicking the taskbar → "Taskbar settings" → "Select which icons appear on the taskbar" → Toggle on for Voice Typing Assistant
+7. **Recommended**: Right-click `run_voice_typing.bat` → Send to → Desktop to create a shortcut
 
 **(Optional) Configure a different model to use for transcript cleaning**
 
@@ -83,33 +78,43 @@ How it works:
 To make the app start automatically when Windows boots:
 1. Press `Win + R` on your keyboard
 2. Type `shell:startup` and press Enter
-3. Drag your `voice_typing.pyw` shortcut into this folder
+3. Create a shortcut to `run_voice_typing.bat` in this folder:
+   - Right-click `run_voice_typing.bat` → "Copy"
+   - Navigate to the startup folder
+   - Right-click in an empty area → "Paste shortcut" (might be under more options)
 
 ### Updating the App
 To update to the latest version:
-1. Double-click `setup.bat`
-2. Choose 'Y' when asked to check for updates
-3. The tool will automatically:
+1. Open Command Prompt or PowerShell
+2. Navigate to the folder: `cd "path\to\better-voice-typing"`
+3. Run: `setup.bat` (Command Prompt) or `.\setup.bat` (PowerShell)
+4. Choose 'Y' when asked to check for updates
+5. The tool will automatically:
    - Download the latest version
    - Preserve your settings and API keys
    - Update all dependencies
-4. Restart the app if it was running
+6. Restart the app if it was running
 
 ## Setup/Installation - For Developers
 
 1. Clone the repo
 2. Ensure you have `uv` installed (see [uv installation guide](https://docs.astral.sh/uv/getting-started/#installation))
-3. Run `setup.bat` or manually:
-   - Create a virtual environment with `uv venv --python ">=3.8"`
-   - Activate with `.venv\Scripts\activate`
-   - Install dependencies with `uv pip install -r requirements.txt`
-4. Create a `.env` file based on `.env.example` by running `cp .env.example .env`
-5. Set up your API keys:
+3. Create a virtual environment with `uv venv --python ">=3.8"`
+4. Activate with `.venv\Scripts\activate`
+5. Install dependencies with `uv pip install -r requirements.txt`
+6. Create a `.env` file based on `.env.example` by running `cp .env.example .env`
+7. Set up your API keys:
    - Get an OpenAI API key from [OpenAI's API Keys page](https://platform.openai.com/api-keys)
    - (Optional) Get an Anthropic API key if you want to use the text cleaning feature
    - Add these keys to your `.env` file
-6. Run the app by double-clicking `voice_typing.pyw`, and add a shortcut to your startup folder to launch automatically on system boot
-7. For debugging: Run with console by executing `python voice_typing.pyw` in PowerShell or Command Prompt with the virtual environment activated
+8. Run the app from the command line:
+   ```
+   .\.venv\Scripts\python.exe .\voice_typing.pyw
+   ```
+9. For debugging: Add the `--debug` flag when executing:
+   ```
+   .\.venv\Scripts\python.exe .\voice_typing.pyw --debug
+   ```
 
 ## TODO
 - [x] Migrate to `uv` for dependency and environment management
@@ -125,6 +130,11 @@ To update to the latest version:
 - [ ] ~~Smart Capture: Record audio in 1-2 minute chunks with silence detection, process chunks with Whisper in background, then combine and clean results with an LLM~~
 
 ## Changelog
+
+### v0.5.2 (2025-03-21)
+- Added `run_voice_typing.bat` for easier application launching
+- Tested and improved update process (run `setup.bat` and choose 'Y' when asked to check for updates)
+- Refined text cleaning prompt for better transcription cleaning on smaller models
 
 ### v0.5.1 (2025-03-21)
 - Added version tracking and changelog

@@ -59,7 +59,7 @@ IMPROVED: I guess I'm more looking for something that includes the word "Clockif
 {}
 </transcription_text>
 
-Respond only with the corrected text, nothing else.
+IMPORTANT: Respond only with the corrected transcription text, nothing else.
     """.strip().format(text)
 
     response = litellm.completion(

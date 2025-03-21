@@ -1,16 +1,18 @@
-from typing import Tuple
+from typing import Tuple, Optional, List
 import requests
 import os
 import sys
 import shutil
 import zipfile
+import tempfile
 from pathlib import Path
+import subprocess
 
-def get_latest_release() -> Tuple[str, str]:
+def get_latest_release() -> Tuple[Optional[str], Optional[str]]:
     """Get the latest release version and download URL from GitHub."""
     try:
         response = requests.get(
-            "https://github.com/Elevate-Code/better-voice-typing/releases/latest"
+            "https://api.github.com/repos/Elevate-Code/better-voice-typing/releases/latest"
         )
         response.raise_for_status()
         data = response.json()
@@ -27,105 +29,111 @@ def get_current_version() -> str:
     except FileNotFoundError:
         return "0.0.0"
 
-def verify_backup_integrity(backup_dir: Path, preserve_items: list) -> bool:
-    """Verify all important files were backed up correctly."""
-    for item in preserve_items:
-        backup_path = backup_dir / item
-        if not backup_path.exists():
-            return False
-    return True
-
-def download_and_extract(url: str, temp_dir: Path) -> bool:
-    """Download and extract the latest release."""
+def backup_user_files(backup_dir: Path, preserve_items: List[str]) -> bool:
+    """Backup important user files and return success status."""
     try:
-        # Backup important user files first
-        backup_dir = temp_dir / "backup"
         backup_dir.mkdir(exist_ok=True)
-
-        # List of files/folders to preserve
-        preserve_items = [
-            '.env',                    # API keys and user settings
-            '.venv',                   # Virtual environment created with uv
-            'transcription_history',   # User's transcription history
-            'user_settings.json',      # Any additional user settings
-            'custom_shortcuts.json'    # Any custom keyboard shortcuts
-        ]
-
-        # Create backups
         for item in preserve_items:
             src = Path.cwd() / item
             if src.exists():
+                dst = backup_dir / item
                 if src.is_dir():
-                    shutil.copytree(src, backup_dir / item, dirs_exist_ok=True)
+                    shutil.copytree(src, dst, dirs_exist_ok=True)
                 else:
-                    shutil.copy2(src, backup_dir / item)
+                    shutil.copy2(src, dst)
+        return True
+    except Exception as e:
+        print(f"Error backing up files: {e}")
+        return False
 
-        # Download and extract new version
+def restore_user_files(backup_dir: Path, preserve_items: List[str]) -> None:
+    """Restore user files from backup."""
+    for item in preserve_items:
+        backup_path = backup_dir / item
+        if backup_path.exists():
+            dest = Path.cwd() / item
+            if dest.exists():
+                if dest.is_dir():
+                    shutil.rmtree(dest)
+                else:
+                    dest.unlink()
+            if backup_path.is_dir():
+                shutil.copytree(backup_path, dest)
+            else:
+                shutil.copy2(backup_path, dest)
+
+def download_and_extract(url: str, extract_dir: Path) -> bool:
+    """Download and extract the latest release."""
+    try:
         response = requests.get(url, stream=True)
         response.raise_for_status()
 
-        zip_path = temp_dir / "update.zip"
+        zip_path = extract_dir / "update.zip"
         with open(zip_path, "wb") as f:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
 
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            # Extract to a temporary directory
-            extract_dir = temp_dir / "extracted"
             zip_ref.extractall(extract_dir)
 
-            # Get the extracted folder name (usually includes the repo name and commit hash)
-            extracted_folder = next(extract_dir.iterdir())
+        return True
+    except Exception as e:
+        print(f"Error downloading or extracting: {e}")
+        return False
 
-            # Update files while preserving user data
-            for item in extracted_folder.iterdir():
-                if item.name not in preserve_items:
-                    dest = Path.cwd() / item.name
-                    if dest.exists():
-                        if dest.is_dir():
-                            shutil.rmtree(dest)
-                        else:
-                            dest.unlink()
-                    if item.is_dir():
-                        shutil.copytree(item, dest)
-                    else:
-                        shutil.copy2(item, dest)
+def update_files(extract_dir: Path, preserve_items: List[str]) -> bool:
+    """Update application files while preserving user data."""
+    try:
+        # Get the extracted folder name (usually includes the repo name and commit hash)
+        extracted_folder = next(p for p in extract_dir.iterdir() if p.is_dir())
 
-        # Restore preserved files from backup
-        for item in preserve_items:
-            backup_path = backup_dir / item
-            if backup_path.exists():
-                dest = Path.cwd() / item
+        # Update files while preserving user data
+        for item in extracted_folder.iterdir():
+            if item.name != '.venv' and item.name not in preserve_items:
+                dest = Path.cwd() / item.name
                 if dest.exists():
                     if dest.is_dir():
                         shutil.rmtree(dest)
                     else:
                         dest.unlink()
-                if backup_path.is_dir():
-                    shutil.copytree(backup_path, dest)
+                if item.is_dir():
+                    shutil.copytree(item, dest)
                 else:
-                    shutil.copy2(backup_path, dest)
-
-        if not verify_backup_integrity(backup_dir, preserve_items):
-            print("Backup verification failed, aborting update")
-            return False
-
+                    shutil.copy2(item, dest)
         return True
     except Exception as e:
-        # If anything fails, try to restore from backup
-        try:
-            for item in preserve_items:
-                backup_path = backup_dir / item
-                if backup_path.exists():
-                    dest = Path.cwd() / item
-                    if backup_path.is_dir():
-                        shutil.copytree(backup_path, dest, dirs_exist_ok=True)
-                    else:
-                        shutil.copy2(backup_path, dest)
-        except Exception as restore_error:
-            print(f"Error restoring backup: {restore_error}")
+        print(f"Error updating files: {e}")
+        return False
 
-        print(f"Error downloading/extracting update: {e}")
+def update_dependencies() -> bool:
+    """Attempt to update dependencies using uv."""
+    try:
+        # Check if uv is available
+        subprocess.run(["uv", "--version"], check=True, capture_output=True)
+
+        # Run dependency update
+        print("Updating dependencies...")
+        result = subprocess.run(
+            ["uv", "pip", "install", "-r", "requirements.txt"],
+            check=False,
+            capture_output=True,
+            text=True
+        )
+
+        if result.returncode == 0:
+            print("Dependencies updated successfully!")
+            return True
+        else:
+            print(f"Failed to update dependencies automatically: {result.stderr}")
+            return False
+    except FileNotFoundError:
+        print("UV tool not found in PATH. Skipping automatic dependency update.")
+        return False
+    except subprocess.CalledProcessError:
+        print("Error checking UV version. Skipping automatic dependency update.")
+        return False
+    except Exception as e:
+        print(f"Unexpected error updating dependencies: {e}")
         return False
 
 def update_app() -> bool:
@@ -142,16 +150,53 @@ def update_app() -> bool:
 
     print(f"Updating from version {current} to {latest}")
 
-    temp_dir = Path("temp_update")
-    temp_dir.mkdir(exist_ok=True)
+    # List of files/folders to preserve
+    preserve_items = [
+        '.env',                    # API keys and user settings
+        'settings.json'            # Any additional user settings
+    ]
 
-    try:
-        if download_and_extract(download_url, temp_dir):
-            print("Update successful!")
-            return True
-        return False
-    finally:
-        shutil.rmtree(temp_dir, ignore_errors=True)
+    with tempfile.TemporaryDirectory() as temp_dir_str:
+        temp_dir = Path(temp_dir_str)
+        backup_dir = temp_dir / "backup"
+        extract_dir = temp_dir / "extracted"
+        extract_dir.mkdir()
+
+        # Backup important files
+        if not backup_user_files(backup_dir, preserve_items):
+            return False
+
+        # Download and extract new version
+        if not download_and_extract(download_url, extract_dir):
+            return False
+
+        # Update files
+        if not update_files(extract_dir, preserve_items):
+            # Restore from backup on failure
+            restore_user_files(backup_dir, preserve_items)
+            return False
+
+        # Restore user files from backup
+        restore_user_files(backup_dir, preserve_items)
+
+        print("\n✅ Files updated successfully!")
+
+        # Try to update dependencies automatically
+        print("\n📦 Checking & updating dependencies...")
+        deps_updated = update_dependencies()
+
+        # Post-update information
+        print("\n📋 Post-update checklist:")
+        print("----------------------------------------")
+        print("1. Check your .env file against .env.example for anything new/updated")
+        print("2. If .env.example has new variables, add/update them in your .env file")
+
+        if not deps_updated:
+            print("2. Update dependencies manually by running:")
+            print("  uv pip install -r requirements.txt")
+
+        print("\n🎉 Update completed successfully!")
+        return True
 
 if __name__ == "__main__":
     success = update_app()
