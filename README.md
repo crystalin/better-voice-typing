@@ -47,24 +47,26 @@ How it works:
 
 ### Quick Start (Windows)
 
-Requires Python 3.8 or higher (check with `python --version`) - get from [python.org](https://python.org)
+* Requires Python 3.8 or higher (check with `python --version`) - get from [python.org](https://python.org)
+* Requires `uv` CLI tool (check with `uv --version`) - get from [uv installation guide](https://docs.astral.sh/uv/getting-started/#installation)
 
-Requires `uv` CLI tool (https://docs.astral.sh/uv/getting-started/#installation)
-
-1. Download this project by clicking the green "Code" button above → "Download ZIP" or clone the repo
+1. Download this project by clicking the green "Code" button at top of page → "Download ZIP" or clone the repo
 2. Extract the ZIP file to a location of your choice
-3. Double-click the `setup.bat` file to automatically:
-   - Create a virtual environment using `uv`
-   - Install required packages with `uv`
-   - Set up your configuration file
-4. When prompted, paste your OpenAI API key ([get one here](https://platform.openai.com/api-keys))
+3. Run `setup.bat` from Command Prompt or PowerShell:
+   - Note: while you *can* just double on the `setup.bat` file to run the setup, running from terminal prevents the window from auto-closing if errors occur
+   - Open Command Prompt or PowerShell; Navigate to the folder: `cd "path\to\extracted\better-voice-typing"`
+   - Run: `setup.bat` (Command Prompt) or `.\setup.bat` (PowerShell)
+   - This will create a virtual environment, install packages, and set up default configuration
+4. Open the `.env` file in Notepad, update the following and save:
+   - OpenAI API key ([get one here](https://platform.openai.com/api-keys))
+   - (Optional) Anthropic API key for text cleaning
 5. Double-click `voice_typing.pyw` to start the app
-6. If that doesn't work, you can also start the app from the command line:
+6. If it doesn't start (working on fixing this), you can also start the app from the command line:
      ```
      cd "path\to\better-voice-typing"
      .\.venv\Scripts\python.exe .\voice_typing.pyw
      ```
-7. **Important**: Ensure the app's tray icon is visible by right-clicking the taskbar → "Taskbar settings" → "Select which icons appear on the taskbar" → Toggle on for Voice Typing Assistant (the tray icon is the main interface for settings and status)
+7. Ensure the app's tray icon is visible by right-clicking the taskbar → "Taskbar settings" → "Select which icons appear on the taskbar" → Toggle on for Voice Typing Assistant (the tray icon is the main interface for settings and status)
 8. **Recommended**: Right-click `voice_typing.pyw` → Send to → Desktop to create a shortcut
 
 ### Auto-start with Windows
