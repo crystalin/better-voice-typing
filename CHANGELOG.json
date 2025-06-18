@@ -1,0 +1,43 @@
+{
+    "agent_rules": "When updating, first check for an existing entry with the same category and today's date. If one is found, append new changes to its 'changes' array. Otherwise, create a new object at the top of the 'changelog' array. Each object requires a 'category', a 'date' (YYYY-MM-DD), and a 'changes' array with descriptive, full-sentence strings. Use 'General' category for project-wide or uncategorized changes.",
+    "categories": ["General"],
+    "changelog": [
+      {
+        "category": "General",
+        "date": "2025-06-18",
+        "changes": [
+          "Enhanced transcription UI with granular feedback for 'Transcribing' and 'Cleaning' stages, and allowed cancellation during these new phases.",
+          "Improved transcription robustness by falling back to the original text if AI cleaning fails, with a UI warning to notify the user.",
+          "Added a configurable `cleaning_timeout` to settings and fixed a potential crash by adding the `tenacity` dependency."
+        ]
+      },
+      {
+        "category": "General",
+        "date": "2025-06-10",
+        "changes": [
+          "Implemented API timeouts for transcription (Whisper) and text cleaning (LiteLLM) to prevent the application from hanging during processing.",
+          "Added improved user feedback on timeout errors with clear messaging and retry functionality."
+        ]
+      },
+      {
+        "category": "General",
+        "date": "2025-03-21",
+        "changes": [
+          "v0.5.2: Added `run_voice_typing.bat` for easier application launching.",
+          "v0.5.2: Tested and improved update process where users run `setup.bat` and choose 'Y' to check for updates.",
+          "v0.5.2: Refined text cleaning prompt for better transcription cleaning on smaller models."
+        ]
+      },
+      {
+        "category": "General",
+        "date": "2025-03-21",
+        "changes": [
+          "v0.5.1: Added version tracking and changelog.",
+          "v0.5.1: Simplified setup to only require an OpenAI API key for full functionality.",
+          "v0.5.1: Migrated to LiteLLM for multi-provider/model support for text cleaning.",
+          "v0.5.1: Fixed an issue with `settings.json` initialization and handling.",
+          "v0.5.1: Improved the `setup.bat` script with better error handling."
+        ]
+      }
+    ]
+  }

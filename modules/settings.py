@@ -12,7 +12,8 @@ class Settings:
             'selected_microphone': None,
             'favorite_microphones': [],
             'silence_timeout': 4.0,
-            'llm_model': "openai/gpt-4o-mini"
+            'llm_model': "openai/gpt-4o-mini",
+            'cleaning_timeout': 10.0  # Timeout for LLM cleaning in seconds
         }
         self.current_settings: Dict[str, Any] = self.load_settings()
         self._migrate_device_settings()

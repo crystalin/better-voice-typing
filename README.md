@@ -18,7 +18,7 @@ How it works:
 
 ### RecordingControls
 - **Toggle Recording**: Caps Lock (normal Caps Lock functionality still available with Ctrl+Caps Lock)
-- **Cancel Recording**: Click the recording indicator
+- **Cancel Recording/Processing**: Click the recording indicator to cancel recording or transcription
 
 ### Tray Options/Settings
 - Left-click tray icon to copy last transcription
@@ -26,7 +26,7 @@ How it works:
 - Microphone Selection: Choose your preferred input device
 - Settings:
   - Continuous Capture: Default recording mode. Record audio until the user stops it, send it all at once to OpenAI Whisper
-  - Clean Transcription: Enable/disable further refinement of the transcription using Claude 3.5 Haiku
+  - Clean Transcription: Enable/disable further refinement of the transcription using a configurable LLM
   - Auto-Stop on Silence: Automatically stop recording after a period of silence
 - Restart: Quickly restart the application, like when its not responding to the keyboard shortcut
 
@@ -131,17 +131,7 @@ To update to the latest version:
 
 ## Changelog
 
-### v0.5.2 (2025-03-21)
-- Added `run_voice_typing.bat` for easier application launching
-- Tested and improved update process (run `setup.bat` and choose 'Y' when asked to check for updates)
-- Refined text cleaning prompt for better transcription cleaning on smaller models
-
-### v0.5.1 (2025-03-21)
-- Added version tracking and changelog
-- You now just need an OpenAI API key for full functionality
-- Migrated to LiteLLM for multi-provider/model support: you can use any model you want for text cleaning
-- Fixed settings.json initialization and handling
-- Fixed `setup.bat` based setup process, improved error handling
+For a detailed history of changes, see the [CHANGELOG.json](CHANGELOG.json) file.
 
 ## Contributing
 

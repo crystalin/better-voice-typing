@@ -6,6 +6,7 @@ from typing import Any, Callable, Optional, Tuple
 import logging
 from datetime import datetime
 from pathlib import Path
+import httpx
 
 from pynput import keyboard
 import pyperclip
@@ -80,11 +81,19 @@ class VoiceTypingApp:
             level_callback=self.ui_feedback.update_audio_level,
             silence_timeout=silence_timeout
         )
-        self.ui_feedback.set_click_callback(self.cancel_recording)
+        self.ui_feedback.set_click_callback(self.handle_ui_click)
         self.recording = False
         self.ctrl_pressed = False
         self.clean_transcription_enabled = self.settings.get('clean_transcription')
         self.history = TranscriptionHistory()
+
+        # Add a flag for canceling processing
+        self.processing_thread: Optional[threading.Thread] = None
+        self.cancel_flag = threading.Event()
+
+        # Log settings information
+        self.logger.info(f"Text cleaning: {'enabled' if self.clean_transcription_enabled else 'disabled'}")
+        self.logger.info(f"LLM model: {self.settings.get('llm_model')}")
 
         # Initialize microphone
         self._initialize_microphone()
@@ -132,7 +141,7 @@ class VoiceTypingApp:
                 else:
                     # Toggle recording and suppress default Caps Lock behavior
                     self.toggle_recording()
-                    self.listener.suppress_event()
+                    # self.listener.suppress_event()
                     return False
 
             return True
@@ -175,7 +184,7 @@ class VoiceTypingApp:
             self.settings.set('selected_microphone', device_id)
             # Stop any ongoing recording when changing microphone
             if self.recording:
-                self.cancel_recording()
+                self.handle_ui_click()
         except Exception as e:
             self.logger.error(f"Error setting microphone: {e}", exc_info=True)
             self.logger.debug(f"Failed device_id: {device_id}")
@@ -183,7 +192,8 @@ class VoiceTypingApp:
 
     def refresh_microphones(self) -> None:
         """Refresh the microphone list and update the tray menu"""
-        self.update_icon_menu()
+        if self.update_icon_menu:
+            self.update_icon_menu()
 
     def toggle_recording(self) -> None:
         if not self.recording:
@@ -226,7 +236,9 @@ class VoiceTypingApp:
 
     def process_audio(self) -> None:
         try:
-            threading.Thread(target=self._process_audio_thread).start()
+            self.cancel_flag.clear()  # Reset flag before starting
+            self.processing_thread = threading.Thread(target=self._process_audio_thread)
+            self.processing_thread.start()
         except Exception as e:
             self.logger.error("Failed to start processing thread", exc_info=True)
             self.logger.debug(f"Thread state: {threading.current_thread().name}")
@@ -237,6 +249,11 @@ class VoiceTypingApp:
             self.logger.info("Starting audio processing")
             print("Analyzing audio...")
             is_valid, reason = self.recorder.analyze_recording()
+
+            if self.cancel_flag.is_set():
+                self.logger.info("Processing cancelled before transcription.")
+                self.status_manager.set_status(AppStatus.IDLE)
+                return
 
             if not is_valid:
                 self.logger.warning(f"Skipping transcription: {reason}")
@@ -252,35 +269,81 @@ class VoiceTypingApp:
             self.logger.info("Starting transcription")
             success, result = self._attempt_transcription()
             self.logger.info("Finished transcription")
+
+            if self.cancel_flag.is_set():
+                self.logger.info("Processing cancelled after transcription.")
+                self.status_manager.set_status(AppStatus.IDLE)
+                return
+
             if not success:
-                self.ui_feedback.show_error_with_retry("⚠️ Transcription failed")
-                self.status_manager.set_status(AppStatus.ERROR, "⚠️ Error processing audio")
-            else:
+                # Check if it was a timeout error
+                if result == "timeout":
+                    self.ui_feedback.show_error_with_retry("⏱️ Request timed out - try again")
+                    self.status_manager.set_status(AppStatus.ERROR, "⏱️ Request timed out")
+                else:
+                    self.ui_feedback.show_error_with_retry("⚠️ Transcription failed")
+                    self.status_manager.set_status(AppStatus.ERROR, "⚠️ Error processing audio")
+            elif result:
                 self.last_recording = None  # Clear on success
                 self.history.add(result)
                 self.ui_feedback.insert_text(result)
-                self.update_icon_menu()
+                if self.update_icon_menu:
+                    self.update_icon_menu()
                 self.status_manager.set_status(AppStatus.IDLE)
                 print("Transcription completed and inserted")
 
         except Exception as e:
             self.logger.error("Error in _process_audio_thread:", exc_info=True)
-            self.ui_feedback.show_error_with_retry("⚠️ Transcription failed")
-            self.status_manager.set_status(AppStatus.ERROR, "⚠️ Error processing audio")
+            # Check if it's a timeout exception
+            if 'timeout' in str(e).lower():
+                self.ui_feedback.show_error_with_retry("⏱️ Request timed out - try again")
+                self.status_manager.set_status(AppStatus.ERROR, "⏱️ Request timed out")
+            else:
+                self.ui_feedback.show_error_with_retry("⚠️ Transcription failed")
+                self.status_manager.set_status(AppStatus.ERROR, "⚠️ Error processing audio")
 
     def _attempt_transcription(self) -> Tuple[bool, Optional[str]]:
-        """Attempt transcription and return (success, result)"""
+        """Attempt transcription and return (success, result or error_type)"""
         try:
+            if not self.last_recording:
+                self.logger.error("Attempted transcription with no recording available.")
+                return False, "no_recording"
+
+            # Update status to show we're transcribing
+            self.status_manager.set_status(AppStatus.TRANSCRIBING)
             text = transcribe_audio(self.last_recording)
+
+            if self.cancel_flag.is_set():
+                return False, "cancelled"
+
             if self.clean_transcription_enabled:
-                # Get the configured LLM model from settings
-                llm_model = self.settings.get('llm_model')
-                text = clean_transcription(text, model=llm_model)
+                try:
+                    # Update status to show we're cleaning
+                    self.status_manager.set_status(AppStatus.CLEANING)
+
+                    # Get the configured LLM model and timeout from settings
+                    llm_model = self.settings.get('llm_model')
+                    cleaning_timeout = self.settings.get('cleaning_timeout')
+
+                    cleaned_text = clean_transcription(text, model=llm_model, timeout=cleaning_timeout)
+                    self.logger.info("Transcription cleaned successfully")
+                    return True, cleaned_text
+                except Exception as e:
+                    self.logger.warning(f"LLM cleaning failed, falling back to raw transcription. Error: {e}")
+                    # Show a brief warning that we're using the fallback
+                    self.ui_feedback.show_warning("⚠️ Using raw transcript (cleaning failed)", 2000)
+                    return True, text  # Fallback to original text
+
             self.logger.info("Transcription completed successfully")
             return True, text
         except Exception as e:
-            self.logger.error(f"Transcription error: {e}", exc_info=True)
-            return False, None
+            # Check if it's a timeout exception
+            if 'timeout' in str(e).lower():
+                self.logger.error(f"Transcription timeout: Request took too long", exc_info=True)
+                return False, "timeout"
+            else:
+                self.logger.error(f"Transcription error: {e}", exc_info=True)
+                return False, None
 
     def retry_transcription(self) -> None:
         """Retry transcription of last failed recording"""
@@ -291,7 +354,7 @@ class VoiceTypingApp:
             self.status_manager.set_status(AppStatus.PROCESSING)
             success, result = self._attempt_transcription()
 
-            if success:
+            if success and result:
                 self.last_recording = None
                 self.history.add(result)
                 pyperclip.copy(result)  # Copy to clipboard instead of direct insertion
@@ -327,13 +390,19 @@ class VoiceTypingApp:
             self.recorder.stop()
         self.ui_feedback.cleanup()
 
-    def cancel_recording(self) -> None:
-        """Cancel recording without attempting transcription"""
-        if self.recording:
+    def handle_ui_click(self) -> None:
+        """Handle clicks on the UI feedback window."""
+        status = self.status_manager.current_status
+        if status == AppStatus.RECORDING:
             print("Canceling recording...")
             self.recording = False
             threading.Thread(target=self._stop_recorder).start()
             self.status_manager.set_status(AppStatus.IDLE)
+        elif status in (AppStatus.PROCESSING, AppStatus.TRANSCRIBING, AppStatus.CLEANING):
+            print("Canceling processing...")
+            if self.processing_thread and self.processing_thread.is_alive():
+                self.cancel_flag.set()
+                # The processing thread will set the status to IDLE upon graceful exit
 
     def _stop_recorder(self) -> None:
         """Helper method to stop recorder in a separate thread"""

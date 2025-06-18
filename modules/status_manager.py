@@ -1,11 +1,13 @@
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Callable
 
 class AppStatus(Enum):
     IDLE = auto()
     RECORDING = auto()
     PROCESSING = auto()
+    TRANSCRIBING = auto()
+    CLEANING = auto()
     ERROR = auto()
 
 @dataclass
@@ -44,6 +46,22 @@ class StatusManager:
             tooltip_text="Processing audio...",
             pulse=True
         ),
+        AppStatus.TRANSCRIBING: StatusConfig(
+            tray_icon="📝",
+            tray_icon_file='assets/microphone-yellow.png',
+            ui_color='#4B0082',  # Indigo
+            ui_text="📝 Transcribing audio...",
+            tooltip_text="Transcribing speech to text",
+            pulse=True
+        ),
+        AppStatus.CLEANING: StatusConfig(
+            tray_icon="✨",
+            tray_icon_file='assets/microphone-yellow.png',
+            ui_color='#008080',  # Teal
+            ui_text="✨ Cleaning transcript...",
+            tooltip_text="Improving transcript quality",
+            pulse=True
+        ),
         AppStatus.ERROR: StatusConfig(
             tray_icon="⚠️",
             tray_icon_file='assets/microphone-yellow.png',
@@ -58,12 +76,14 @@ class StatusManager:
     def __init__(self) -> None:
         self._current_status: AppStatus = AppStatus.IDLE
         self._error_message: Optional[str] = None
-        self._ui_callback = None
-        self._tray_callback = None
+        self._ui_callback: Optional[Callable] = None
+        self._tray_callback: Optional[Callable] = None
 
-    def set_callbacks(self, ui_callback: callable, tray_callback: callable) -> None:
-        self._ui_callback = ui_callback
-        self._tray_callback = tray_callback
+    def set_callbacks(self, ui_callback: Optional[Callable] = None, tray_callback: Optional[Callable] = None) -> None:
+        if ui_callback:
+            self._ui_callback = ui_callback
+        if tray_callback:
+            self._tray_callback = tray_callback
 
     def set_status(self, status: AppStatus, error_message: Optional[str] = None) -> None:
         self._current_status = status

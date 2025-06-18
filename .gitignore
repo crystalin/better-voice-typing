@@ -11,6 +11,7 @@ temp_audio.*
 temp_update/
 tests/setup_test/fresh/
 tests/setup_test/update/
+sandbox/
 
 ########################################################################
 # General

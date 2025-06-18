@@ -21,6 +21,7 @@ class UIFeedback:
         # Configure the indicator window
         self.indicator.overrideredirect(True)  # Remove window decorations
         self.indicator.attributes('-topmost', True)  # Keep on top
+        self.indicator.attributes('-alpha', 0.85)  # Make window semi-transparent
         self.indicator.configure(bg='red')
 
         # Create main frame
@@ -287,7 +288,7 @@ if __name__ == "__main__":
             self.recording = False
             self.listener = None
 
-        def on_press(self, key: keyboard.Key) -> None:
+        def on_press(self, key: Any) -> None:
             if key == keyboard.Key.caps_lock:
                 self.recording = not self.recording
                 if self.recording:
