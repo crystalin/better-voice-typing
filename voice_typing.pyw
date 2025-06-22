@@ -22,41 +22,7 @@ from modules.ui import UIFeedback
 from modules.audio_manager import set_input_device, get_default_device_id, DeviceIdentifier, find_device_by_identifier
 from modules.status_manager import StatusManager, AppStatus
 from modules.screen_utils import set_process_dpi_awareness, hide_console_window
-
-def setup_logging() -> logging.Logger:
-    """Configure application logging"""
-    # Create logs directory in user's documents folder
-    # Ex. "C:\Users\{name}\Documents\VoiceTyping\logs\voice_typing_20241120.log"
-    log_dir = Path.home() / "Documents" / "VoiceTyping" / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
-
-    # Create log file with timestamp
-    log_file = log_dir / f"voice_typing_{datetime.now().strftime('%Y%m%d')}.log"
-
-    # Configure logging
-    logger = logging.getLogger('voice_typing')
-    logger.setLevel(logging.DEBUG)
-
-    # File handler
-    file_handler = logging.FileHandler(log_file)
-    file_handler.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(formatter)
-
-    # Add console handler for real-time debugging
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.DEBUG)
-    console_formatter = logging.Formatter('%(levelname)s: %(message)s')  # Simpler format for console
-    console_handler.setFormatter(console_formatter)
-
-    logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
-
-    # Log system info at startup
-    logger.info(f"Python version: {sys.version}")
-    logger.info(f"Platform: {sys.platform}")
-
-    return logger
+from modules.logger import setup_logging
 
 class VoiceTypingApp:
     def __init__(self) -> None:
@@ -164,26 +130,46 @@ class VoiceTypingApp:
                     device = find_device_by_identifier(identifier)
                     if device:
                         set_input_device(device['id'])
+                        self.logger.info(f"Using saved microphone: {device['name']} (ID: {device['id']}, Channels: {device['max_input_channels']}, Sample Rate: {device['default_samplerate']} Hz)")
                     else:
                         # Fallback to default if saved device not found
                         self.settings.set('selected_microphone', None)
-                        set_input_device(get_default_device_id())
+                        default_id = get_default_device_id()
+                        set_input_device(default_id)
+                        self.logger.warning(f"Saved microphone not found, using default device (ID: {default_id})")
                 except Exception as e:
                     self.logger.error(f"Error setting saved microphone: {e}")
                     # Fallback to default
                     self.settings.set('selected_microphone', None)
-                    set_input_device(get_default_device_id())
+                    default_id = get_default_device_id()
+                    set_input_device(default_id)
+                    self.logger.info(f"Using default microphone (ID: {default_id}) due to error")
+            else:
+                # No saved microphone, use default
+                default_id = get_default_device_id()
+                set_input_device(default_id)
+                self.logger.info(f"No saved microphone, using default device (ID: {default_id})")
         except Exception as e:
             self.logger.error(f"Error setting saved microphone: {e}", exc_info=True)
             # Fallback to default
             self.settings.set('selected_microphone', None)
-            set_input_device(get_default_device_id())
+            default_id = get_default_device_id()
+            set_input_device(default_id)
+            self.logger.info(f"Using default microphone (ID: {default_id}) due to initialization error")
 
     def set_microphone(self, device_id: int) -> None:
         """Change the active microphone device"""
         try:
-            set_input_device(device_id)
-            self.settings.set('selected_microphone', device_id)
+            # Get device info for proper identifier storage
+            from modules.audio_manager import get_device_by_id, create_device_identifier
+            device = get_device_by_id(device_id)
+            if device:
+                identifier = create_device_identifier(device)
+                set_input_device(device_id)
+                self.settings.set('selected_microphone', identifier._asdict())
+                self.logger.info(f"Microphone changed to: {device['name']} (ID: {device_id}, Channels: {device['max_input_channels']}, Sample Rate: {device['default_samplerate']} Hz)")
+            else:
+                raise ValueError(f"Device with ID {device_id} not found")
             # Stop any ongoing recording when changing microphone
             if self.recording:
                 self.handle_ui_click()

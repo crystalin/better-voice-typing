@@ -45,6 +45,8 @@ def create_microphone_menu(app):
             identifier = create_device_identifier(device)._asdict()
             app.settings.set('selected_microphone', identifier)
             set_input_device(device['id'])
+            # Log the device change
+            app.logger.info(f"Microphone changed to: {device['name']} (ID: {device['id']}, Channels: {device['max_input_channels']}, Sample Rate: {device['default_samplerate']} Hz)")
         return handler
 
     def make_favorite_handler(device: Dict[str, any]):
