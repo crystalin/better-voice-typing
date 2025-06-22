@@ -6,6 +6,8 @@ import numpy as np
 import sounddevice as sd
 import soundfile as sf
 
+from modules.settings import Settings
+
 # NOTE: Optimized settings for speech recording
 # - 16kHz sample rate is optimal for STT, using 22.05kHz for safety margin
 # - 16-bit depth is standard for speech
@@ -13,10 +15,13 @@ import soundfile as sf
 # - WAV format ensures compatibility and quality
 # NOTE: Ends up being ~2.6 megabytes for every 60 seconds with these settings.
 
-# CONSTANTS: Audio analysis thresholds
+# Initialize settings to get configurable values
+settings = Settings()
+
 # RMS threshold below which audio is considered silence
 # (-30 dB = 0.0316, -40 dB = 0.01, -50 dB = 0.003)
-SILENCE_THRESHOLD = 0.01
+# Configurable via settings.json
+SILENCE_THRESHOLD = settings.get('silence_threshold')
 # Minimum duration in seconds for valid recordings
 MIN_DURATION = 1.0
 # Time of continuous silence (in seconds) before auto-stopping
@@ -107,7 +112,8 @@ class AudioRecorder:
 
                 # Check if mostly silence
                 if rms < SILENCE_THRESHOLD:
-                    return False, "Recording contains mostly silence"
+                    db_value = 20 * np.log10(max(1e-10, rms))
+                    return False, f"Recording contains mostly silence (RMS: {rms:.4f} / {db_value:.1f}dB < threshold: {SILENCE_THRESHOLD:.4f})"
 
                 return True, ""
 

@@ -7,6 +7,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 import httpx
+import json
 
 from pynput import keyboard
 import pyperclip
@@ -20,6 +21,7 @@ from modules.tray import setup_tray_icon
 from modules.ui import UIFeedback
 from modules.audio_manager import set_input_device, get_default_device_id, DeviceIdentifier, find_device_by_identifier
 from modules.status_manager import StatusManager, AppStatus
+from modules.screen_utils import set_process_dpi_awareness, hide_console_window
 
 def setup_logging() -> logging.Logger:
     """Configure application logging"""
@@ -62,11 +64,11 @@ class VoiceTypingApp:
         self.logger = setup_logging()
         self.logger.info("Starting Voice Typing application")
 
-        # Hide console in Windows if running as .pyw
+        # Windows specific tweaks (DPI awareness & hiding console)
         if os.name == 'nt':
-            import ctypes
-            ctypes.windll.user32.ShowWindow(
-                ctypes.windll.kernel32.GetConsoleWindow(), 0)
+            if not set_process_dpi_awareness():
+                self.logger.debug("DPI awareness could not be set or is already configured.")
+            hide_console_window()
 
         # Initialize these as None first
         self.update_tray_tooltip = None
@@ -76,7 +78,8 @@ class VoiceTypingApp:
 
         self.settings = Settings()
         silent_start_timeout = self.settings.get('silent_start_timeout')
-        self.ui_feedback = UIFeedback()
+        ui_position = self.settings.get('ui_indicator_position')
+        self.ui_feedback = UIFeedback(position=ui_position)
         self.recorder = AudioRecorder(
             level_callback=self.ui_feedback.update_audio_level,
             silent_start_timeout=silent_start_timeout
@@ -92,8 +95,7 @@ class VoiceTypingApp:
         self.cancel_flag = threading.Event()
 
         # Log settings information
-        self.logger.info(f"Text cleaning: {'enabled' if self.clean_transcription_enabled else 'disabled'}")
-        self.logger.info(f"LLM model: {self.settings.get('llm_model')}")
+        self.logger.info(f"Application settings:\n{json.dumps(self.settings.current_settings)}")
 
         # Initialize microphone
         self._initialize_microphone()
@@ -247,7 +249,7 @@ class VoiceTypingApp:
     def _process_audio_thread(self) -> None:
         try:
             self.logger.info("Starting audio processing")
-            print("Analyzing audio...")
+            self.logger.info("Analyzing audio...")
             is_valid, reason = self.recorder.analyze_recording()
 
             if self.cancel_flag.is_set():

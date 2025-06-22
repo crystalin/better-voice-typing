@@ -7,7 +7,7 @@ A lightweight Python desktop app for Windows that improves upon Windows Voice Ty
 ## Overview - How it works
 
 - Press `Caps Lock` to begin recording your voice
-- A recording indicator with audio level appears in the top-right corner
+- A recording indicator with audio level appears (top-right corner by default)
 - You can continue to navigate and type while recording, or click the recording indicator to cancel
 - Press `Caps Lock` again to stop recording and process the audio
 - The audio is sent to your chosen speech-to-text provider (OpenAI `gpt-4o-transcribe` by default)
@@ -37,6 +37,7 @@ For a detailed history of changes, see the [CHANGELOG.json](CHANGELOG.json) file
   - Speech-to-Text: Select your STT provider (OpenAI, Google Cloud) and model (Whisper, GPT-4o, GPT-4o Mini)
   - Silent-Start Timeout: Cancels the recording if no sound is detected within the first few seconds, preventing accidental recordings
   - Clean Transcription: Enable/disable further refinement of the transcription using a configurable LLM
+  - UI Indicator Position: Change the corner of the screen where the recording indicator appears.
 - Restart: Quickly restart the application, like when its not responding to the keyboard shortcut
 - Exit: Exit the application
 
@@ -54,7 +55,12 @@ For a detailed history of changes, see the [CHANGELOG.json](CHANGELOG.json) file
 - For now, only supporting Windows OS and Python 3.10+
 - Brittle start script, `run_voice_typing.bat` sometimes just stops working silently so I fall back to running `voice_typing.pyw` from the command line
 - Untested update mechanism ([let me know if it doesn't work](https://github.com/jason-m-hicks/better-voice-typing/issues))
-- Maximum recording duration of ~10 minutes per transcription when using legacy `whisper-1` model due to OpenAI Whisper API's 25MB file size limit
+- Recordings may not produce transcriptions if your microphone's audio level is too low
+- Maximum recording duration of ~10 minutes per transcription due to OpenAI Whisper API's 25MB file size limit
+
+## Troubleshooting
+
+For solutions to common problems, see the [**Troubleshooting Guide**](TROUBLESHOOTING.md).
 
 ## Setup/Installation - For Users
 
@@ -130,16 +136,18 @@ To update to the latest version:
    ```
 
 ## TODO
-- [x] Migrate to `uv` for dependency and environment management
-- [x] Migrate to LiteLLM as wrapper to support other LLM providers.
-- [x] Handling for the `settings.json` file, so I'm not committing changes to mine.
+
+Want to request a feature or report a bug? [Create an issue](https://github.com/Elevate-Code/better-voice-typing/issues)
+
 - [x] Review and validate setup and installation process
 - [x] Add support for OpenAI's [new audio models](https://platform.openai.com/docs/guides/audio)
+- [x] Update and improve README.md
+- [ ] Some warning or auto-stop if recording duration is going to be too long (due to 25MB API limits)
 - [ ] Add support for more speech-to-text providers (Google Cloud implementation in progress)
+- [ ] Since text cleaning isn't needed with gpt-4o-transcribe, pivot it to be "post-processing" and allow user to customize the prompt
 - [ ] Customizable activation shortcuts for recording control
-- [ ] (may no longer apply) Some warning or auto-stop if recording duration is going to be too long (due to API limits)
-- [ ] Update and improve README.md
 - [ ] Improved transcription accuracy via VLM for code variables, proper nouns and abbreviations using screenshot context and cursor position
+- [ ] Add support for translation?
 
 ## Contributing
 

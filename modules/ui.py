@@ -7,11 +7,16 @@ import pyautogui
 import pyperclip
 
 from modules.status_manager import StatusConfig
+from modules.screen_utils import get_primary_monitor_geometry
 
 class UIFeedback:
     pyautogui_lock = threading.Lock()
 
-    def __init__(self):
+    def __init__(self, position: str = 'top-right'):
+        # Store desired position; fallback to default if invalid
+        valid_positions = {'top-right', 'top-left', 'bottom-right', 'bottom-left'}
+        self.position = position if position in valid_positions else 'top-right'
+
         # Create the floating window
         self.root = tk.Tk()
         self.root.withdraw()  # Hide initially?
@@ -59,9 +64,8 @@ class UIFeedback:
         self.indicator.bind('<Button-1>', self._handle_click)
         self.level_canvas.bind('<Button-1>', self._handle_click)
 
-        # Position window in top-right corner
-        screen_width = self.root.winfo_screenwidth()
-        self.indicator.geometry(f'+{screen_width-150}+10')
+        # Position window initially
+        self._position_window()
 
         # Add warning state variables
         self.warning_color = '#FFA500'  # Orange warning color
@@ -69,6 +73,49 @@ class UIFeedback:
 
         # Update label text color to be more visible on warning background
         self.label.configure(fg='black')  # Will be dynamically changed based on state
+
+    def _position_window(self) -> None:
+        """Positions the indicator window based on the configured corner."""
+        self.indicator.update_idletasks()
+        win_w = self.indicator.winfo_width()
+        win_h = self.indicator.winfo_height()
+
+        monitor_geometry = get_primary_monitor_geometry()
+
+        # Default coordinates if monitor info fails
+        if monitor_geometry:
+            mon_x = monitor_geometry.left
+            mon_y = monitor_geometry.top
+            mon_w = monitor_geometry.width
+            mon_h = monitor_geometry.height
+        else:
+            mon_x = 0
+            mon_y = 0
+            mon_w = self.root.winfo_screenwidth()
+            mon_h = self.root.winfo_screenheight()
+
+        margin = 15
+        # Compute x
+        if 'right' in self.position:
+            pos_x = mon_x + mon_w - win_w - margin
+        else:  # left
+            pos_x = mon_x + margin
+
+        # Compute y
+        if 'bottom' in self.position:
+            pos_y = mon_y + mon_h - win_h - margin
+        else:  # top
+            pos_y = mon_y + margin
+
+        self.indicator.geometry(f'+{pos_x}+{pos_y}')
+
+    # Public method to allow position change at runtime
+    def set_position(self, position: str) -> None:
+        """Update the indicator corner position and reposition it immediately."""
+        valid_positions = {'top-right', 'top-left', 'bottom-right', 'bottom-left'}
+        if position in valid_positions:
+            self.position = position
+            self._position_window()
 
     def update_audio_level(self, level: float) -> None:
         """Update the audio level indicator (level should be between 0.0 and 1.0)"""
@@ -99,6 +146,7 @@ class UIFeedback:
             fg='white'
         )
         self.level_canvas.pack(fill='x', padx=4, pady=(0, 4))
+        self._position_window()
         self.indicator.deiconify()
         self.pulsing = True
         self._pulse()
@@ -163,6 +211,7 @@ class UIFeedback:
             fg='black',  # Dark text for warning state
             text=message
         )
+        self._position_window()
 
         # Hide the level indicator during warning
         self.level_canvas.pack_forget()
@@ -190,6 +239,7 @@ class UIFeedback:
             fg='black',
             text=f"{message}\n🔄 Click to retry"
         )
+        self._position_window()
 
         # Hide the level indicator during warning
         self.level_canvas.pack_forget()

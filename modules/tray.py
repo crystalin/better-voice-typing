@@ -208,6 +208,14 @@ def setup_tray_icon(app):
         if recent_texts:
             pyperclip.copy(recent_texts[0])
 
+    def change_ui_position(new_pos: str):
+        """Update settings and move indicator to new corner."""
+        app.settings.set('ui_indicator_position', new_pos)
+        app.ui_feedback.set_position(new_pos)
+        # Refresh menu to update checkmarks
+        if hasattr(app, 'update_icon_menu') and app.update_icon_menu:
+            app.update_icon_menu()
+
     def get_menu():
         # Dynamic menu that updates when called
         copy_menu = create_copy_menu(app)
@@ -259,6 +267,31 @@ def setup_tray_icon(app):
                         'Smart Capture',
                         lambda icon, item: None,
                         enabled=False
+                    ),
+                    pystray.MenuItem(
+                        'Recording Indicator Position',
+                        pystray.Menu(
+                            pystray.MenuItem(
+                                'Top Right',
+                                lambda icon, item: change_ui_position('top-right'),
+                                checked=lambda item: app.settings.get('ui_indicator_position') == 'top-right'
+                            ),
+                            pystray.MenuItem(
+                                'Top Left',
+                                lambda icon, item: change_ui_position('top-left'),
+                                checked=lambda item: app.settings.get('ui_indicator_position') == 'top-left'
+                            ),
+                            pystray.MenuItem(
+                                'Bottom Right',
+                                lambda icon, item: change_ui_position('bottom-right'),
+                                checked=lambda item: app.settings.get('ui_indicator_position') == 'bottom-right'
+                            ),
+                            pystray.MenuItem(
+                                'Bottom Left',
+                                lambda icon, item: change_ui_position('bottom-left'),
+                                checked=lambda item: app.settings.get('ui_indicator_position') == 'bottom-left'
+                            ),
+                        )
                     ),
                     pystray.MenuItem(  # Add STT submenu
                         'Speech-to-Text',

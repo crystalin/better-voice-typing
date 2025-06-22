@@ -9,6 +9,7 @@ class Settings:
             'continuous_capture': True,
             'smart_capture': False,
             'silent_start_timeout': 4.0,
+            'silence_threshold': 0.01,  # RMS threshold for silence detection (0.01 = -40dB)
 
             'stt_provider': 'openai',  # 'openai', 'google', etc.
             'stt_language': 'en',
@@ -21,6 +22,9 @@ class Settings:
 
             'selected_microphone': None,
             'favorite_microphones': [],
+
+            # UI customization
+            'ui_indicator_position': 'top-right',  # 'top-right', 'top-left', 'bottom-right', 'bottom-left'
         }
         self.current_settings: Dict[str, Any] = self.load_settings()
         self._run_migrations()

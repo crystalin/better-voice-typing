@@ -6,6 +6,18 @@
       {
         "category": "General",
         "date": "2025-06-22",
+        "version": "0.6.1",
+        "changes": [
+          "Fixed UI indicator positioning to correctly align on the primary monitor in multi-display setups.",
+          "Added a 'UI Indicator Position' setting to the tray menu, allowing users to select a corner for the indicator.",
+          "Added configurable `silence_threshold` in `settings.json` to fix transcription issue#2.",
+          "Added a `Troubleshooting` section to README.md for the new setting.",
+          "Improved logging by including RMS values on discarded audio and fixing `.pyw` output."
+        ]
+      },
+      {
+        "category": "General",
+        "date": "2025-06-22",
         "version": "0.6.0",
         "changes": [
           "Renamed 'Auto-Stop on Silence' setting to 'Silent-Start Timeout' for clarity and added an automatic migration for existing user settings.",
