@@ -1,10 +1,34 @@
 {
     "agent_rules": "When updating, first check for an existing entry with the same category and today's date. If one is found, append new changes to its 'changes' array. Otherwise, create a new object at the top of the 'changelog' array. Each object requires a 'category', a 'date' (YYYY-MM-DD), and a 'changes' array with descriptive, full-sentence strings. Use 'General' category for project-wide or uncategorized changes.",
+    "note_to_self_release_process": "To release a new version: 1. Commit and push all changes to main. 2. Create and push a git tag (eg. `git tag vX.Y.Z` then `git push origin vX.Y.Z`). 3. Go to GitHub Releases, draft a new release from the tag, copy/draft changelog notes, and publish.",
     "categories": ["General"],
     "changelog": [
       {
         "category": "General",
+        "date": "2025-06-22",
+        "version": "0.6.0",
+        "changes": [
+          "Renamed 'Auto-Stop on Silence' setting to 'Silent-Start Timeout' for clarity and added an automatic migration for existing user settings.",
+          "Updated README.md with new information and added a migration guide."
+        ]
+      },
+      {
+        "category": "General",
+        "date": "2025-06-21",
+        "version": "0.6.0",
+        "changes": [
+          "🎉 Implemented multi-provider Speech-to-Text framework with support for OpenAI's new GPT-4o Transcribe models.",
+          "Added provider selection in the tray menu under Settings → Speech-to-Text → Provider.",
+          "Added model selection for OpenAI STT with Whisper, GPT-4o, and GPT-4o Mini options.",
+          "Implemented Strategy and Factory patterns for flexible STT provider architecture, making it easy to add new providers.",
+          "Updated default transcription model from Whisper to GPT-4o Mini for improved accuracy and lower cost.",
+          "Added placeholder implementation for Google Cloud STT provider for future expansion."
+        ]
+      },
+      {
+        "category": "General",
         "date": "2025-06-18",
+        "version": "0.5.4",
         "changes": [
           "Enhanced transcription UI with granular feedback for 'Transcribing' and 'Cleaning' stages, and allowed cancellation during these new phases.",
           "Improved transcription robustness by falling back to the original text if AI cleaning fails, with a UI warning to notify the user.",
@@ -14,6 +38,7 @@
       {
         "category": "General",
         "date": "2025-06-10",
+        "version": "0.5.3",
         "changes": [
           "Implemented API timeouts for transcription (Whisper) and text cleaning (LiteLLM) to prevent the application from hanging during processing.",
           "Added improved user feedback on timeout errors with clear messaging and retry functionality."
@@ -22,21 +47,23 @@
       {
         "category": "General",
         "date": "2025-03-21",
+        "version": "0.5.2",
         "changes": [
-          "v0.5.2: Added `run_voice_typing.bat` for easier application launching.",
-          "v0.5.2: Tested and improved update process where users run `setup.bat` and choose 'Y' to check for updates.",
-          "v0.5.2: Refined text cleaning prompt for better transcription cleaning on smaller models."
+          "Added `run_voice_typing.bat` for easier application launching.",
+          "Tested and improved update process where users run `setup.bat` and choose 'Y' to check for updates.",
+          "Refined text cleaning prompt for better transcription cleaning on smaller models."
         ]
       },
       {
         "category": "General",
         "date": "2025-03-21",
+        "version": "0.5.1",
         "changes": [
-          "v0.5.1: Added version tracking and changelog.",
-          "v0.5.1: Simplified setup to only require an OpenAI API key for full functionality.",
-          "v0.5.1: Migrated to LiteLLM for multi-provider/model support for text cleaning.",
-          "v0.5.1: Fixed an issue with `settings.json` initialization and handling.",
-          "v0.5.1: Improved the `setup.bat` script with better error handling."
+          "Added version tracking and changelog.",
+          "Simplified setup to only require an OpenAI API key for full functionality.",
+          "Migrated to LiteLLM for multi-provider/model support for text cleaning.",
+          "Fixed an issue with `settings.json` initialization and handling.",
+          "Improved the `setup.bat` script with better error handling."
         ]
       }
     ]

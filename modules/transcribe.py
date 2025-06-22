@@ -1,24 +1,139 @@
+"""Multi-provider Speech-to-Text module with Strategy pattern"""
 import os
+import logging
+from typing import Union, Optional
+from pathlib import Path
 from dotenv import load_dotenv
-from openai import OpenAI
-import httpx
+
+# Import all provider classes
+from services.openai_stt import OpenAITranscriber
+from services.google_stt import GoogleTranscriber
+from modules.settings import Settings
 
 # OpenAI Speech to text docs: https://platform.openai.com/docs/guides/speech-to-text
 # ⚠️ IMPORTANT: OpenAI Audio API file uploads are currently limited to 25 MB
 
 load_dotenv()
 
-client = OpenAI(
-    api_key=os.environ.get("OPENAI_API_KEY"),
-    # Configure timeout: 60s total timeout, 10s connect timeout
-    timeout=httpx.Timeout(60.0, connect=10.0)
-)
+logger = logging.getLogger('voice_typing')
 
-def transcribe_audio(filename: str, language: str = "en") -> str:
-    with open(filename, 'rb') as audio_file:
-        response = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=audio_file,
-            language=language
-        )
-    return response.text
+# Initialize settings
+settings = Settings()
+
+
+def _get_transcriber(provider_name: str):
+    """
+    Factory function to get a transcriber instance based on provider name
+
+    Args:
+        provider_name: Name of the provider ('openai', 'google', etc.)
+
+    Returns:
+        Transcriber instance for the specified provider
+
+    Raises:
+        ValueError: If provider is unknown
+    """
+    if provider_name == "openai":
+        model = settings.get('openai_stt_model') or 'gpt-4o-mini-transcribe'
+        language = settings.get('stt_language') or 'en'
+        return OpenAITranscriber(model=model, language=language)
+    elif provider_name == "google":
+        language = settings.get('google_stt_language') or 'en-US'
+        return GoogleTranscriber(language=language)
+    # Add other providers here as needed
+    else:
+        raise ValueError(f"Unknown STT provider: {provider_name}")
+
+
+def transcribe_audio(filename: str, language: Optional[str] = None) -> str:
+    """
+    Transcribe audio using the configured provider
+
+    This is the high-level function that the rest of the app calls.
+    It routes to the appropriate provider based on settings.
+
+    Args:
+        filename: Path to the audio file to transcribe
+        language: Optional language override (uses settings default if not provided)
+
+    Returns:
+        Transcribed text
+
+    Raises:
+        Exception: If transcription fails
+    """
+    provider = settings.get('stt_provider') or 'openai'
+
+    # Get language from parameter or settings
+    if language is None:
+        language = settings.get('stt_language') or 'en'
+
+    logger.info(f"Transcribing audio using provider: {provider}")
+
+    try:
+        transcriber = _get_transcriber(provider)
+
+        # Update language if provided as parameter
+        if language and hasattr(transcriber, 'update_language'):
+            transcriber.update_language(language)
+
+        # Transcribe the audio
+        result = transcriber.transcribe(filename)
+        logger.info(f"Transcription successful using {provider}")
+        return result
+
+    except Exception as e:
+        logger.error(f"Transcription failed with provider {provider}: {e}")
+        raise
+
+
+def set_stt_provider(provider: str) -> None:
+    """
+    Change the active STT provider
+
+    Args:
+        provider: Provider name ('openai', 'google', etc.)
+    """
+    # Validate provider
+    try:
+        _get_transcriber(provider)  # This will raise if provider is invalid
+        settings.set('stt_provider', provider)
+        logger.info(f"STT provider changed to: {provider}")
+    except ValueError as e:
+        logger.error(f"Failed to set STT provider: {e}")
+        raise
+
+
+def get_current_provider() -> str:
+    """Get the currently configured STT provider"""
+    return settings.get('stt_provider') or 'openai'
+
+
+def get_available_providers() -> list:
+    """Get list of available STT providers"""
+    providers = []
+
+    # Check OpenAI
+    if os.environ.get("OPENAI_API_KEY"):
+        providers.append({
+            'name': 'openai',
+            'display_name': 'OpenAI',
+            'models': ['whisper-1', 'gpt-4o-transcribe', 'gpt-4o-mini-transcribe']
+        })
+
+    # Check Google
+    if os.environ.get("GOOGLE_CLOUD_API_KEY"):
+        providers.append({
+            'name': 'google',
+            'display_name': 'Google Cloud',
+            'models': []  # Google doesn't have selectable models in same way
+        })
+
+    return providers
+
+
+# Maintain backward compatibility with old function signature
+def transcribe_audio_legacy(filename: str, language: str = "en") -> str:
+    """Legacy function for backward compatibility"""
+    return transcribe_audio(filename, language)

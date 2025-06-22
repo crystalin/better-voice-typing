@@ -7,6 +7,7 @@ import pystray
 from PIL import Image, ImageDraw
 
 from modules.audio_manager import get_input_devices, get_default_device_id, set_input_device, create_device_identifier
+from modules import transcribe
 
 def create_tray_icon(icon_path: str) -> Image.Image:
     """Create tray icon from file path"""
@@ -104,6 +105,81 @@ def create_microphone_menu(app):
 
     return menu_items
 
+def create_stt_provider_menu(app):
+    """Creates menu for STT provider and model selection"""
+    current_provider = transcribe.get_current_provider()
+    available_providers = transcribe.get_available_providers()
+
+    def make_provider_handler(provider_name: str):
+        def handler(icon, item):
+            try:
+                transcribe.set_stt_provider(provider_name)
+                app.update_icon_menu()
+            except Exception as e:
+                print(f"Error changing STT provider: {e}")
+        return handler
+
+    def make_model_handler(model: str):
+        def handler(icon, item):
+            app.settings.set('openai_stt_model', model)
+            app.update_icon_menu()
+        return handler
+
+    # Create provider selection items
+    provider_items = []
+    for provider in available_providers:
+        provider_items.append(
+            pystray.MenuItem(
+                provider['display_name'],
+                make_provider_handler(provider['name']),
+                checked=lambda item, p=provider: p['name'] == current_provider
+            )
+        )
+
+    # Create model selection items (only for OpenAI currently)
+    model_items = []
+    if current_provider == 'openai':
+        current_model = app.settings.get('openai_stt_model')
+        openai_provider = next((p for p in available_providers if p['name'] == 'openai'), None)
+        if openai_provider:
+            for model in openai_provider['models']:
+                display_name = {
+                    'gpt-4o-transcribe': 'GPT-4o (Best)',
+                    'gpt-4o-mini-transcribe': 'GPT-4o Mini',
+                    'whisper-1': 'Whisper (Legacy)',
+                }.get(model, model)
+
+                model_items.append(
+                    pystray.MenuItem(
+                        display_name,
+                        make_model_handler(model),
+                        checked=lambda item, m=model: m == current_model
+                    )
+                )
+
+    menu_items = []
+
+    # Add provider selection
+    menu_items.append(
+        pystray.MenuItem(
+            'Provider',
+            pystray.Menu(*provider_items) if provider_items else pystray.Menu(
+                pystray.MenuItem('No providers available', None, enabled=False)
+            )
+        )
+    )
+
+    # Add model selection (only shown for OpenAI)
+    if model_items:
+        menu_items.append(
+            pystray.MenuItem(
+                'OpenAI Model',
+                pystray.Menu(*model_items)
+            )
+        )
+
+    return menu_items
+
 def setup_tray_icon(app):
     # Create a single icon instance
     icon = pystray.Icon(
@@ -136,6 +212,7 @@ def setup_tray_icon(app):
         # Dynamic menu that updates when called
         copy_menu = create_copy_menu(app)
         microphone_menu = create_microphone_menu(app)
+        stt_menu = create_stt_provider_menu(app)  # Add STT provider menu
 
         return pystray.Menu(
             # ↓ This is now the default item, triggered on left-click.
@@ -174,14 +251,18 @@ def setup_tray_icon(app):
                         checked=lambda item: app.settings.get('clean_transcription')
                     ),
                     pystray.MenuItem(
-                        'Auto-Stop on Silence',
+                        'Silent-Start Timeout',
                         lambda icon, item: app.toggle_silence_detection(),
-                        checked=lambda item: app.settings.get('silence_timeout') is not None
+                        checked=lambda item: app.settings.get('silent_start_timeout') is not None
                     ),
                     pystray.MenuItem(
                         'Smart Capture',
                         lambda icon, item: None,
                         enabled=False
+                    ),
+                    pystray.MenuItem(  # Add STT submenu
+                        'Speech-to-Text',
+                        pystray.Menu(*stt_menu)
                     )
                 )
             ),

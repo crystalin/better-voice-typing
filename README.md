@@ -4,31 +4,41 @@ A lightweight Python desktop app for Windows that improves upon Windows Voice Ty
 
 ![Voice Typing Demo](voice-typing-demo.gif)
 
-## Overview
+## Overview - How it works
 
-How it works:
-- Press Caps Lock to begin recording your voice (without activating Caps Lock)
+- Press `Caps Lock` to begin recording your voice
 - A recording indicator with audio level appears in the top-right corner
-- Press Caps Lock again to stop recording and process the audio
-- The audio is sent to OpenAI Whisper for transcription
-- (optional) The transcribed text is further refined using a quick LLM model
+- You can continue to navigate and type while recording, or click the recording indicator to cancel
+- Press `Caps Lock` again to stop recording and process the audio
+- The audio is sent to your chosen speech-to-text provider (OpenAI `gpt-4o-transcribe` by default)
+- (optional) The transcribed text can be further refined with a quick pass of an LLM model
 - The transcribed text is inserted at your current cursor position in any text field or editor
+
+**NOTE:** Hold `Ctrl` while pressing `Caps Lock` if you want to toggle Caps Lock on/off.
+
+## Changelog
+
+✨ New major version, v0.6.0, see [docs/stt-upgrade-migration.md](docs/stt-upgrade-migration.md) for more details.
+
+For a detailed history of changes, see the [CHANGELOG.json](CHANGELOG.json) file.
 
 ## Features
 
-### RecordingControls
-- **Toggle Recording**: Caps Lock (normal Caps Lock functionality still available with Ctrl+Caps Lock)
+### Recording Controls
+- **Toggle Recording**: Caps Lock (Ctrl+Caps Lock to toggle Caps Lock on/off)
 - **Cancel Recording/Processing**: Click the recording indicator to cancel recording or transcription
+- **Copy Last Transcription**: If your cursor was misplaced, left-click tray icon to copy last transcription
 
 ### Tray Options/Settings
-- Left-click tray icon to copy last transcription
 - Recent Transcriptions: Access previous transcriptions, copy to clipboard
 - Microphone Selection: Choose your preferred input device
 - Settings:
-  - Continuous Capture: Default recording mode. Record audio until the user stops it, send it all at once to OpenAI Whisper
+  - Continuous Capture: Default recording mode. Record audio until the user stops it, send it all at once to the STT provider
+  - Speech-to-Text: Select your STT provider (OpenAI, Google Cloud) and model (Whisper, GPT-4o, GPT-4o Mini)
+  - Silent-Start Timeout: Cancels the recording if no sound is detected within the first few seconds, preventing accidental recordings
   - Clean Transcription: Enable/disable further refinement of the transcription using a configurable LLM
-  - Auto-Stop on Silence: Automatically stop recording after a period of silence
 - Restart: Quickly restart the application, like when its not responding to the keyboard shortcut
+- Exit: Exit the application
 
 ### Tray History
 - Keeps track of recent transcriptions
@@ -37,42 +47,45 @@ How it works:
 
 ## Technical Details
 - Minimal UI built with Python tkinter
-- OpenAI Whisper API for transcription (will support other providers in the future)
-- For now, only tested on Windows OS and Python 3.8+
+- Multi-provider Speech-to-Text support with OpenAI GPT-4o models and Whisper
+- Extensible architecture for adding new STT providers (Google Cloud, Azure, etc.)
 
-## Current Limitations
-- ⚠️ Maximum recording duration of ~10 minutes per transcription due to OpenAI Whisper API's 25MB file size limit
+## Known Issues/Limitations
+- For now, only supporting Windows OS and Python 3.10+
+- Brittle start script, `run_voice_typing.bat` sometimes just stops working silently so I fall back to running `voice_typing.pyw` from the command line
+- Untested update mechanism ([let me know if it doesn't work](https://github.com/jason-m-hicks/better-voice-typing/issues))
+- Maximum recording duration of ~10 minutes per transcription when using legacy `whisper-1` model due to OpenAI Whisper API's 25MB file size limit
 
 ## Setup/Installation - For Users
 
 ### Quick Start (Windows)
 
-* Requires Python 3.8 or higher (check with `python --version`) - get from [python.org](https://python.org)
+* Requires Python 3.10 or higher (check with `python --version`) - get from [python.org](https://python.org)
 * Requires `uv` CLI tool (check with `uv --version`) - get from [uv installation guide](https://docs.astral.sh/uv/getting-started/#installation)
 
 1. Download this project by clicking the green "Code" button at top of page → "Download ZIP" or clone the repo
 2. Extract the ZIP file to a location of your choice
 3. Run `setup.bat` from Command Prompt or PowerShell:
-   - Note: while you *can* just double on the `setup.bat` file to run the setup, running from terminal prevents the window from auto-closing if errors occur
-   - Open Command Prompt or PowerShell; Navigate to the folder: `cd "path\to\extracted\better-voice-typing"`
+   - Open Command Prompt or PowerShell (run `cmd` or `powershell` in the search bar)
+   - Navigate to the folder: `cd "path\to\extracted\better-voice-typing"`
    - Run: `setup.bat` (Command Prompt) or `.\setup.bat` (PowerShell)
    - This will create a virtual environment, install packages, and set up default configuration
+   - If you encounter any instillation issues, please [report them](https://github.com/Elevate-Code/better-voice-typing/issues)
 4. Open the `.env` file in Notepad, update the following and save:
    - OpenAI API key ([get one here](https://platform.openai.com/api-keys))
    - (Optional) Anthropic API key for text cleaning
 5. Launch the application by double-clicking the `run_voice_typing.bat` file in the application folder
-6. Ensure the app's tray icon is visible by right-clicking the taskbar → "Taskbar settings" → "Select which icons appear on the taskbar" → Toggle on for Voice Typing Assistant
-7. **Recommended**: Right-click `run_voice_typing.bat` → Send to → Desktop to create a shortcut
+6. ⚠️ Ensure the app's tray icon is visible by right-clicking the taskbar → "Taskbar settings" → "Select which icons appear on the taskbar" → Toggle on for Voice Typing Assistant
+7. Right-click `run_voice_typing.bat` → Send to → Desktop to create a shortcut
 
-**(Optional) Configure a different model to use for transcript cleaning**
+**(Optional) Fine-tune transcript cleaning**
 
-- After running the app once, a `settings.json` file will be created
-- Open this file in Notepad or any text editor
-- Find the `"llm_model": "openai/gpt-4o-mini"` line
-- Set it to your [preferred provider/model](https://docs.litellm.ai/docs/providers), using the LiteLLM format `"provider/model-name"`, for example:
-   - For Grok: `"llm_model": "groq/llama3-8b-8192"`
-   - For Claude: `"llm_model": "anthropic/claude-3-5-haiku-latest"`
-- Save the file and restart the application
+GPT-4o-transcribe is usually accurate enough that an extra cleaning pass isn't necessary.
+If you still want to use the post-processing feature:
+
+1. After the first run, open `settings.json`.
+2. Update the `"llm_model"` value to any provider/model [supported by LiteLLM](https://docs.litellm.ai/docs/providers) (eg. `anthropic/claude-3-5-haiku-latest`).
+3. Save the file and restart the application.
 
 ### Auto-start with Windows
 To make the app start automatically when Windows boots:
@@ -121,17 +134,12 @@ To update to the latest version:
 - [x] Migrate to LiteLLM as wrapper to support other LLM providers.
 - [x] Handling for the `settings.json` file, so I'm not committing changes to mine.
 - [x] Review and validate setup and installation process
-- [ ] Add support for OpenAI's [new audio models](https://platform.openai.com/docs/guides/audio)
-- [ ] Add support for more speech-to-text providers (might be possible via LiteLLM?)
-- [ ] Some warning or auto-stop if recording duration is going to be too long (due to API limits)
-- [ ] Update and improve README.md
+- [x] Add support for OpenAI's [new audio models](https://platform.openai.com/docs/guides/audio)
+- [ ] Add support for more speech-to-text providers (Google Cloud implementation in progress)
 - [ ] Customizable activation shortcuts for recording control
+- [ ] (may no longer apply) Some warning or auto-stop if recording duration is going to be too long (due to API limits)
+- [ ] Update and improve README.md
 - [ ] Improved transcription accuracy via VLM for code variables, proper nouns and abbreviations using screenshot context and cursor position
-- [ ] ~~Smart Capture: Record audio in 1-2 minute chunks with silence detection, process chunks with Whisper in background, then combine and clean results with an LLM~~
-
-## Changelog
-
-For a detailed history of changes, see the [CHANGELOG.json](CHANGELOG.json) file.
 
 ## Contributing
 

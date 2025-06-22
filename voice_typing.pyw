@@ -13,7 +13,7 @@ import pyperclip
 
 from modules.clean_text import clean_transcription
 from modules.history import TranscriptionHistory
-from modules.recorder import AudioRecorder, DEFAULT_SILENCE_TIMEOUT
+from modules.recorder import AudioRecorder, DEFAULT_SILENT_START_TIMEOUT
 from modules.settings import Settings
 from modules.transcribe import transcribe_audio
 from modules.tray import setup_tray_icon
@@ -75,11 +75,11 @@ class VoiceTypingApp:
         self.last_recording: Optional[str] = None
 
         self.settings = Settings()
-        silence_timeout = self.settings.get('silence_timeout')
+        silent_start_timeout = self.settings.get('silent_start_timeout')
         self.ui_feedback = UIFeedback()
         self.recorder = AudioRecorder(
             level_callback=self.ui_feedback.update_audio_level,
-            silence_timeout=silence_timeout
+            silent_start_timeout=silent_start_timeout
         )
         self.ui_feedback.set_click_callback(self.handle_ui_click)
         self.recording = False
@@ -423,13 +423,13 @@ class VoiceTypingApp:
 
     def toggle_silence_detection(self) -> None:
         """Toggle silence detection on/off"""
-        current_timeout = self.settings.get('silence_timeout')
+        current_timeout = self.settings.get('silent_start_timeout')
         # Toggle between None and default timeout
-        new_timeout = None if current_timeout is not None else DEFAULT_SILENCE_TIMEOUT
-        self.settings.set('silence_timeout', new_timeout)
+        new_timeout = None if current_timeout is not None else DEFAULT_SILENT_START_TIMEOUT
+        self.settings.set('silent_start_timeout', new_timeout)
 
         # Update recorder's silence timeout
-        self.recorder.silence_timeout = new_timeout
+        self.recorder.silent_start_timeout = new_timeout
 
         status = "enabled" if new_timeout is not None else "disabled"
         print(f"Silence detection {status}")

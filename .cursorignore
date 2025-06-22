@@ -1,0 +1,4 @@
+# By default, Cursor ignores all things in ignore. Here we exclude some things.
+!sandbox/
+!.env.example
+!settings.json

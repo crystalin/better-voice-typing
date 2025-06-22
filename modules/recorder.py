@@ -20,7 +20,7 @@ SILENCE_THRESHOLD = 0.01
 # Minimum duration in seconds for valid recordings
 MIN_DURATION = 1.0
 # Time of continuous silence (in seconds) before auto-stopping
-DEFAULT_SILENCE_TIMEOUT = 4.0
+DEFAULT_SILENT_START_TIMEOUT = 4.0
 
 class AudioRecorder:
     # Controls how smooth/reactive the audio level indicator bar appears in the UI
@@ -30,7 +30,7 @@ class AudioRecorder:
 
     def __init__(self, filename: str = 'temp_audio.wav',
                  level_callback: Optional[Callable[[float], None]] = None,
-                 silence_timeout: Optional[float] = None) -> None:
+                 silent_start_timeout: Optional[float] = None) -> None:
         self.filename = filename
         self.recording = False
         self.thread: Optional[threading.Thread] = None
@@ -41,7 +41,7 @@ class AudioRecorder:
         self._lock: threading.Lock = threading.Lock()
         self.audio_data: list[np.ndarray] = []  # Store audio chunks for analysis
         self.silence_start: Optional[float] = None
-        self.silence_timeout = silence_timeout
+        self.silent_start_timeout = silent_start_timeout
         self.auto_stopped = False
         self.recording_start_time: Optional[float] = None
         self.INITIAL_CHECK_DURATION = 4.0  # Only check first n seconds for silence
@@ -57,7 +57,7 @@ class AudioRecorder:
         current_level = max(0.0, min(1.0, normalized))
 
         # Only check for silence during the initial period
-        if (self.silence_timeout is not None and
+        if (self.silent_start_timeout is not None and
             self.recording_start_time is not None):
 
             elapsed_time = time.time() - self.recording_start_time
@@ -67,8 +67,8 @@ class AudioRecorder:
                 if rms < SILENCE_THRESHOLD:
                     if self.silence_start is None:
                         self.silence_start = time.time()
-                    elif time.time() - self.silence_start >= self.silence_timeout:
-                        print(f"Auto-stopping due to {self.silence_timeout}s of initial silence")
+                    elif time.time() - self.silence_start >= self.silent_start_timeout:
+                        print(f"Stopping due to {self.silent_start_timeout}s of initial silence")
                         self.auto_stopped = True
                         self.recording = False
                         return 0.0
