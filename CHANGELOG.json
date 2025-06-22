@@ -8,6 +8,7 @@
         "date": "2025-06-22",
         "version": "0.6.1",
         "changes": [
+          "Refined transcription logging for clarity by consolidating provider/model details and adding a preview of the transcribed text upon completion.",
           "Fixed UI indicator positioning to correctly align on the primary monitor in multi-display setups.",
           "Added a 'UI Indicator Position' setting to the tray menu, allowing users to select a corner for the indicator.",
           "Added configurable `silence_threshold` in `settings.json` to fix transcription issue#2.",

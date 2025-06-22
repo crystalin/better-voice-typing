@@ -31,7 +31,6 @@ class OpenAITranscriber:
         )
         self.model = model
         self.language = language
-        logger.info(f"Initialized OpenAI transcriber with model: {model}, language: {language}")
 
     def transcribe(self, audio_data: Union[bytes, str, Path]) -> str:
         """
@@ -73,7 +72,6 @@ class OpenAITranscriber:
                     language=self.language
                 )
 
-            logger.info(f"Successfully transcribed audio using {self.model}")
             return response.text
 
         except Exception as e:
@@ -82,10 +80,10 @@ class OpenAITranscriber:
 
     def update_model(self, model: str) -> None:
         """Update the model used for transcription"""
+        # dead code? probably added with the intention of reusing transcriber instances
+        # but the current implementation doesn't work that way?
         self.model = model
-        logger.info(f"Updated OpenAI model to: {model}")
 
     def update_language(self, language: str) -> None:
         """Update the language used for transcription"""
         self.language = language
-        logger.info(f"Updated transcription language to: {language}")

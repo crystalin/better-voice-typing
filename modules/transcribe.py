@@ -69,10 +69,15 @@ def transcribe_audio(filename: str, language: Optional[str] = None) -> str:
     if language is None:
         language = settings.get('stt_language') or 'en'
 
-    logger.info(f"Transcribing audio using provider: {provider}")
-
     try:
         transcriber = _get_transcriber(provider)
+
+        # Get model info if available
+        model_info = ""
+        if hasattr(transcriber, 'model'):
+            model_info = f"/{transcriber.model}"
+
+        logger.info(f"Using provider: {provider}{model_info}, language: {language}")
 
         # Update language if provided as parameter
         if language and hasattr(transcriber, 'update_language'):
@@ -80,7 +85,6 @@ def transcribe_audio(filename: str, language: Optional[str] = None) -> str:
 
         # Transcribe the audio
         result = transcriber.transcribe(filename)
-        logger.info(f"Transcription successful using {provider}")
         return result
 
     except Exception as e:

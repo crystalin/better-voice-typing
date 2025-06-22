@@ -169,7 +169,7 @@ class VoiceTypingApp:
                         self.settings.set('selected_microphone', None)
                         set_input_device(get_default_device_id())
                 except Exception as e:
-                    print(f"Error setting saved microphone: {e}")
+                    self.logger.error(f"Error setting saved microphone: {e}")
                     # Fallback to default
                     self.settings.set('selected_microphone', None)
                     set_input_device(get_default_device_id())
@@ -199,7 +199,7 @@ class VoiceTypingApp:
 
     def toggle_recording(self) -> None:
         if not self.recording:
-            print("🎙️ Starting recording...")
+            self.logger.info("🎙️ Starting recording...")
             self.recording = True
             self.recorder.start()
             self.status_manager.set_status(AppStatus.RECORDING)
@@ -249,7 +249,6 @@ class VoiceTypingApp:
     def _process_audio_thread(self) -> None:
         try:
             self.logger.info("Starting audio processing")
-            self.logger.info("Analyzing audio...")
             is_valid, reason = self.recorder.analyze_recording()
 
             if self.cancel_flag.is_set():
@@ -270,7 +269,6 @@ class VoiceTypingApp:
 
             self.logger.info("Starting transcription")
             success, result = self._attempt_transcription()
-            self.logger.info("Finished transcription")
 
             if self.cancel_flag.is_set():
                 self.logger.info("Processing cancelled after transcription.")
@@ -292,7 +290,10 @@ class VoiceTypingApp:
                 if self.update_icon_menu:
                     self.update_icon_menu()
                 self.status_manager.set_status(AppStatus.IDLE)
-                print("Transcription completed and inserted")
+                # Log transcription result with preview
+                preview_len = 50
+                preview = result[:preview_len] + "..." if len(result) > preview_len else result
+                self.logger.info(f"Transcription completed ({len(result)} chars): {preview}")
 
         except Exception as e:
             self.logger.error("Error in _process_audio_thread:", exc_info=True)
@@ -336,7 +337,6 @@ class VoiceTypingApp:
                     self.ui_feedback.show_warning("⚠️ Using raw transcript (cleaning failed)", 2000)
                     return True, text  # Fallback to original text
 
-            self.logger.info("Transcription completed successfully")
             return True, text
         except Exception as e:
             # Check if it's a timeout exception
@@ -371,7 +371,8 @@ class VoiceTypingApp:
     def toggle_clean_transcription(self) -> None:
         self.clean_transcription_enabled = not self.clean_transcription_enabled
         self.settings.set('clean_transcription', self.clean_transcription_enabled)
-        print(f"Clean transcription {'enabled' if self.clean_transcription_enabled else 'disabled'}")
+        status = 'enabled' if self.clean_transcription_enabled else 'disabled'
+        self.logger.info(f"Clean transcription {status}")
 
     def run(self) -> None:
         # Start keyboard listener
@@ -396,12 +397,12 @@ class VoiceTypingApp:
         """Handle clicks on the UI feedback window."""
         status = self.status_manager.current_status
         if status == AppStatus.RECORDING:
-            print("Canceling recording...")
+            self.logger.info("Canceling recording...")
             self.recording = False
             threading.Thread(target=self._stop_recorder).start()
             self.status_manager.set_status(AppStatus.IDLE)
         elif status in (AppStatus.PROCESSING, AppStatus.TRANSCRIBING, AppStatus.CLEANING):
-            print("Canceling processing...")
+            self.logger.info("Canceling processing...")
             if self.processing_thread and self.processing_thread.is_alive():
                 self.cancel_flag.set()
                 # The processing thread will set the status to IDLE upon graceful exit
@@ -434,7 +435,6 @@ class VoiceTypingApp:
         self.recorder.silent_start_timeout = new_timeout
 
         status = "enabled" if new_timeout is not None else "disabled"
-        print(f"Silence detection {status}")
         self.logger.info(f"Silence detection {status}")
 
     def restart_app(self) -> None:
