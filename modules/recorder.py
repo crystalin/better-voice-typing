@@ -49,7 +49,6 @@ class AudioRecorder:
         self.silent_start_timeout = silent_start_timeout
         self.auto_stopped = False
         self.recording_start_time: Optional[float] = None
-        self.INITIAL_CHECK_DURATION = 4.0  # Only check first n seconds for silence
         self.initial_sound_detected = False  # Track if we've detected any sound
 
     def _calculate_level(self, indata: np.ndarray) -> float:
@@ -61,26 +60,23 @@ class AudioRecorder:
         normalized = (db + 60) / 60
         current_level = max(0.0, min(1.0, normalized))
 
-        # Only check for silence during the initial period
+        # Only check for silence at the start of the recording, before any sound is detected.
         if (self.silent_start_timeout is not None and
-            self.recording_start_time is not None):
+            self.recording_start_time is not None and
+            not self.initial_sound_detected):
 
-            elapsed_time = time.time() - self.recording_start_time
-
-            # Only perform silence detection during initial period and before any sound is detected
-            if elapsed_time <= self.INITIAL_CHECK_DURATION and not self.initial_sound_detected:
-                if rms < SILENCE_THRESHOLD:
-                    if self.silence_start is None:
-                        self.silence_start = time.time()
-                    elif time.time() - self.silence_start >= self.silent_start_timeout:
-                        print(f"Stopping due to {self.silent_start_timeout}s of initial silence")
-                        self.auto_stopped = True
-                        self.recording = False
-                        return 0.0
-                else:
-                    # We've detected sound, stop checking for silence
-                    self.initial_sound_detected = True
-                    self.silence_start = None
+            if rms < SILENCE_THRESHOLD:
+                if self.silence_start is None:
+                    self.silence_start = time.time()
+                elif time.time() - self.silence_start >= self.silent_start_timeout:
+                    print(f"Stopping due to {self.silent_start_timeout}s of initial silence")
+                    self.auto_stopped = True
+                    self.recording = False
+                    return 0.0
+            else:
+                # We've detected sound, stop checking for silence
+                self.initial_sound_detected = True
+                self.silence_start = None
 
         # Apply smoothing for UI feedback
         self.smoothed_level = (self.SMOOTHING_FACTOR * current_level) + \

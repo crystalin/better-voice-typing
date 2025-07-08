@@ -107,9 +107,11 @@ class VoiceTypingApp:
                     # Allow normal Caps Lock behavior when Ctrl is pressed
                     return True
                 else:
-                    # Toggle recording and suppress default Caps Lock behavior
+                    # Toggle recording and suppress default Caps Lock behavior. Returning False is not always sufficient
+                    # to prevent the OS from toggling the Caps Lock state, so suppress_event() is used.
+                    # TODO: watch this as it still seems to be a bit flaky
                     self.toggle_recording()
-                    # self.listener.suppress_event()
+                    self.listener.suppress_event()
                     return False
 
             return True

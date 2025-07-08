@@ -3,10 +3,44 @@ import os
 import logging
 from typing import Union, Optional
 from pathlib import Path
+import io
+import soundfile as sf
+import numpy as np
 from openai import OpenAI
 import httpx
 
 logger = logging.getLogger('voice_typing')
+
+# NOTE: Temp workaround for OpenAI bug where transcription cuts off.
+# See: https://community.openai.com/t/gpt-4o-transcribe-drops-the-end-of-recordings/765790
+SILENCE_PADDING_DURATION_S = 1.5
+
+
+def _pad_audio_with_silence(
+    audio_data: Union[bytes, str, Path],
+    duration_s: float
+) -> io.BytesIO:
+    """
+    Pads audio data with silence at the end.
+
+    Args:
+        audio_data: Audio data as bytes, file path string, or Path object.
+        duration_s: Duration of silence to add in seconds.
+
+    Returns:
+        An in-memory BytesIO object containing the padded audio in WAV format.
+    """
+    input_stream = io.BytesIO(audio_data) if isinstance(audio_data, bytes) else audio_data
+    data, samplerate = sf.read(input_stream, dtype='float32')
+
+    padding_samples = int(duration_s * samplerate)
+    silence = np.zeros(padding_samples, dtype='float32')
+    padded_data = np.concatenate([data, silence])
+
+    buffer = io.BytesIO()
+    sf.write(buffer, padded_data, samplerate, format='WAV', subtype='PCM_16')
+    buffer.seek(0)
+    return buffer
 
 
 class OpenAITranscriber:
@@ -46,33 +80,45 @@ class OpenAITranscriber:
             Exception: If transcription fails
         """
         try:
-            # Handle different input types
-            if isinstance(audio_data, (str, Path)):
-                # File path provided
-                file_path = Path(audio_data) if isinstance(audio_data, str) else audio_data
-                if not file_path.exists():
-                    raise FileNotFoundError(f"Audio file not found: {file_path}")
+            file_to_send = None
+            opened_file = None
 
-                with open(file_path, 'rb') as audio_file:
-                    response = self.client.audio.transcriptions.create(
-                        model=self.model,
-                        file=audio_file,
-                        language=self.language
-                    )
-            else:
-                # Raw bytes provided - need to create a file-like object
-                # OpenAI API requires a file object with a name attribute
-                import io
-                audio_file = io.BytesIO(audio_data)
-                audio_file.name = "audio.wav"  # OpenAI needs a filename
+            try:
+                # Conditionally pad audio for gpt-4o models as a workaround
+                if "gpt-4o" in self.model:
+                    logger.debug(f"Padding audio with {SILENCE_PADDING_DURATION_S}s of silence for {self.model}")
+                    padded_buffer = _pad_audio_with_silence(audio_data, SILENCE_PADDING_DURATION_S)
 
+                    filename = "audio.wav"
+                    if isinstance(audio_data, (str, Path)):
+                        filename = Path(audio_data).name
+
+                    padded_buffer.name = filename
+                    file_to_send = padded_buffer
+
+                # Handle original, unpadded audio data
+                elif isinstance(audio_data, (str, Path)):
+                    file_path = Path(audio_data)
+                    if not file_path.exists():
+                        raise FileNotFoundError(f"Audio file not found: {file_path}")
+                    opened_file = open(file_path, 'rb')
+                    file_to_send = opened_file
+                else:
+                    file_to_send = io.BytesIO(audio_data)
+                    file_to_send.name = "audio.wav"
+
+                # Perform transcription
                 response = self.client.audio.transcriptions.create(
                     model=self.model,
-                    file=audio_file,
+                    file=file_to_send,
                     language=self.language
                 )
+                return response.text
 
-            return response.text
+            finally:
+                if opened_file:
+                    opened_file.close()
+                # BytesIO buffers are managed by garbage collector, no close needed for file_to_send
 
         except Exception as e:
             logger.error(f"OpenAI transcription failed: {e}", exc_info=True)

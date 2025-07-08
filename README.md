@@ -46,6 +46,17 @@ For a detailed history of changes, see the [CHANGELOG.json](CHANGELOG.json) file
 - Useful if your cursor was in the wrong place at the time of insertion
 - Quick access to copy previous transcriptions from system tray
 
+### Fine-Tuning (Optional)
+
+While most settings can be controlled from the tray menu, you can fine-tune the application's behavior by editing the `settings.json` file.
+
+| Setting | Description | Default | Example Values |
+| --- | --- | --- | --- |
+| `silent_start_timeout` | Duration in seconds to wait for sound at the beginning of a recording before automatically canceling. Set to `null` to disable. | `4.0` | `2.0` to `5.0` |
+| `silence_threshold` | The audio level (RMS) below which sound is considered silence. Lower values are more sensitive. | `0.01` | `0.005` (very quiet) to `0.02` (noisier) |
+| `stt_provider` | The speech-to-text service to use. | `"openai"` | `"openai"`, `"google"` |
+| `openai_stt_model` | The specific model to use for OpenAI's service. `gpt-4o-transcribe` is recommended for highest accuracy. | `"gpt-4o-transcribe"` | `"gpt-4o-transcribe"`, `"gpt-4o-mini-transcribe"` |
+
 ## Technical Details
 - Minimal UI built with Python tkinter
 - Multi-provider Speech-to-Text support with OpenAI GPT-4o models and Whisper
