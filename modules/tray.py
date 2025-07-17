@@ -15,11 +15,6 @@ def create_tray_icon(icon_path: str) -> Image.Image:
     icon_path = os.path.join(current_dir, icon_path)
     return Image.open(icon_path)
 
-def on_exit(icon, item):
-    icon.stop()
-    # Ensure clean exit of the application
-    os._exit(0)
-
 def create_copy_menu(app):
     """Creates dynamic menu of recent transcriptions"""
     def make_copy_handler(text):
@@ -217,6 +212,13 @@ def setup_tray_icon(app):
         # Refresh menu to update checkmarks
         if hasattr(app, 'update_icon_menu') and app.update_icon_menu:
             app.update_icon_menu()
+
+    def on_exit(icon, item):
+        """Log exit and close the application."""
+        app.logger.info("Application exiting.")
+        icon.stop()
+        # Ensure clean exit of the application
+        os._exit(0)
 
     def get_menu():
         # Dynamic menu that updates when called

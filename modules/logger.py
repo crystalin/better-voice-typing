@@ -1,14 +1,22 @@
 import logging
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-def setup_logging() -> logging.Logger:
+if TYPE_CHECKING:
+    # This is a workaround to avoid circular imports
+    from modules.settings import Settings
+
+def setup_logging(settings: "Settings") -> logging.Logger:
     """Configure application logging"""
     # Create logs directory in user's documents folder
     # Ex. "C:\Users\{name}\Documents\VoiceTyping\logs\voice_typing_20241120.log"
     log_dir = Path.home() / "Documents" / "VoiceTyping" / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
+
+    # Clean up old log files
+    cleanup_logs(log_dir, settings.get('log_retention_days'))
 
     # Create log file with timestamp
     log_file = log_dir / f"voice_typing_{datetime.now().strftime('%Y%m%d')}.log"
@@ -57,3 +65,23 @@ def setup_logging() -> logging.Logger:
     logger.info(f"Platform: {sys.platform}")
 
     return logger
+
+def cleanup_logs(log_dir: Path, retention_days: int):
+    """Deletes log files older than the specified retention period."""
+    if retention_days is None:
+        return
+    try:
+        retention_cutoff = datetime.now() - timedelta(days=retention_days)
+        for log_file in log_dir.glob("voice_typing_*.log"):
+            try:
+                file_date_str = log_file.stem.split("_")[-1]
+                file_date = datetime.strptime(file_date_str, "%Y%m%d")
+                if file_date < retention_cutoff:
+                    log_file.unlink()
+            except (ValueError, IndexError):
+                # Ignore files with unexpected naming conventions
+                continue
+    except Exception as e:
+        # Use print() here because the logger may not be fully configured yet.
+        # This error is critical for debugging startup issues from a console.
+        print(f"Error during log cleanup: {e}")

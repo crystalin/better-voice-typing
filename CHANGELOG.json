@@ -8,7 +8,9 @@
         "date": "2025-07-17",
         "version": "0.6.3",
         "changes": [
-          "Fixed Python version compatibility checks in setup.bat and documentation to explicitly require Python 3.10-3.12, addressing Pillow wheel availability issue reported by @Theo-Deffenbaugh."
+          "Fixed Python version compatibility checks in setup.bat and documentation to explicitly require Python 3.10-3.12, addressing Pillow wheel availability issue reported by @Theo-Deffenbaugh.",
+          "Fixed the retry transcription functionality to remain available even after successful transcriptions, allowing users to retry when transcription results are inaccurate.",
+          "The retry button now stays enabled until a new recording is started, enabling multiple retry attempts for the same audio."
         ]
       },
       {
@@ -16,9 +18,11 @@
         "date": "2025-07-08",
         "version": "0.6.2",
         "changes": [
-                    "Fixed the silent-start timeout feature to correctly respect user settings.",
+          "Improved application restart reliability by using `subprocess.Popen` to preserve the virtual environment context.",
+          "Fixed the silent-start timeout feature to correctly respect user settings.",
           "Added a 'Fine-Tuning' section to the README to document advanced user-configurable settings.",
-          "Attempted fix for issue with native caps lock functionality being activated randomly."
+          "Attempted fix for issue with native caps lock functionality being activated randomly.",
+          "Implemented automatic log file cleanup with a configurable `log_retention_days` setting to manage disk space."
         ]
       },
       {

@@ -1,6 +1,7 @@
 import os
 import sys
 import threading
+import subprocess
 import traceback
 from typing import Any, Callable, Optional, Tuple
 import logging
@@ -26,8 +27,11 @@ from modules.logger import setup_logging
 
 class VoiceTypingApp:
     def __init__(self) -> None:
-        # Setup logging first
-        self.logger = setup_logging()
+        # Initialize settings first
+        self.settings = Settings()
+
+        # Setup logging
+        self.logger = setup_logging(self.settings)
         self.logger.info("Starting Voice Typing application")
 
         # Windows specific tweaks (DPI awareness & hiding console)
@@ -36,13 +40,13 @@ class VoiceTypingApp:
                 self.logger.debug("DPI awareness could not be set or is already configured.")
             hide_console_window()
 
-        # Initialize these as None first
-        self.update_tray_tooltip = None
-        self.update_icon_menu = None
+        # Initialize attributes that will be set later by other modules
+        self.update_tray_tooltip: Optional[Callable] = None
+        self.update_icon_menu: Optional[Callable] = None
+
         # Initialize last_recording before tray setup
         self.last_recording: Optional[str] = None
 
-        self.settings = Settings()
         silent_start_timeout = self.settings.get('silent_start_timeout')
         ui_position = self.settings.get('ui_indicator_position')
         self.ui_feedback = UIFeedback(position=ui_position)
@@ -188,6 +192,8 @@ class VoiceTypingApp:
     def toggle_recording(self) -> None:
         if not self.recording:
             self.logger.info("🎙️ Starting recording...")
+            # Clear last recording when starting a new one
+            self.last_recording = None
             self.recording = True
             self.recorder.start()
             self.status_manager.set_status(AppStatus.RECORDING)
@@ -272,7 +278,6 @@ class VoiceTypingApp:
                     self.ui_feedback.show_error_with_retry("⚠️ Transcription failed")
                     self.status_manager.set_status(AppStatus.ERROR, "⚠️ Error processing audio")
             elif result:
-                self.last_recording = None  # Clear on success
                 self.history.add(result)
                 self.ui_feedback.insert_text(result)
                 if self.update_icon_menu:
@@ -345,11 +350,13 @@ class VoiceTypingApp:
             success, result = self._attempt_transcription()
 
             if success and result:
-                self.last_recording = None
                 self.history.add(result)
                 pyperclip.copy(result)  # Copy to clipboard instead of direct insertion
                 self.status_manager.set_status(AppStatus.IDLE)
                 self.ui_feedback.show_warning("✅ Transcription copied to clipboard", 3000)
+                # Update the menu to reflect the new transcription in history
+                if self.update_icon_menu:
+                    self.update_icon_menu()
             else:
                 self.ui_feedback.show_error_with_retry("⚠️ Retry failed")
                 self.status_manager.set_status(AppStatus.ERROR)
@@ -426,12 +433,20 @@ class VoiceTypingApp:
         self.logger.info(f"Silence detection {status}")
 
     def restart_app(self) -> None:
-        """Restart the application by launching a new instance and closing the current one"""
-        self.logger.info("Restarting application...")
+        """Restart the application by launching a new instance and closing the current one."""
+        self.logger.info("Attempting to restart application...")
         try:
-            # Start new instance of the app
-            os.startfile(sys.argv[0])
+            # Use subprocess.Popen to ensure the correct python executable from the venv is used.
+            # sys.executable is the path to the python interpreter running the script.
+            # We pass sys.argv to the new process to restart with the same arguments.
+            # This is more reliable than os.startfile as it doesn't depend on file associations.
+            self.logger.debug(f"Restarting with command: {[sys.executable] + sys.argv}")
+            subprocess.Popen([sys.executable] + sys.argv)
+
             # Exit current instance
+            self.logger.info("New instance started. Exiting current instance.")
+            # Ensure all logs are written before exiting
+            logging.shutdown()
             os._exit(0)
         except Exception as e:
             self.logger.error(f"Failed to restart application: {e}", exc_info=True)

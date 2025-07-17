@@ -25,6 +25,9 @@ class Settings:
 
             # UI customization
             'ui_indicator_position': 'top-right',  # 'top-right', 'top-left', 'bottom-right', 'bottom-left'
+
+            # Logging
+            'log_retention_days': 60
         }
         self.current_settings: Dict[str, Any] = self.load_settings()
         self._run_migrations()
