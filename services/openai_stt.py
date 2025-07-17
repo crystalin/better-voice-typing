@@ -12,7 +12,7 @@ import httpx
 logger = logging.getLogger('voice_typing')
 
 # NOTE: Temp workaround for OpenAI bug where transcription cuts off.
-# See: https://community.openai.com/t/gpt-4o-transcribe-drops-the-end-of-recordings/765790
+# See: https://community.openai.com/t/gpt-4o-transcribe-truncates-the-transcript/1148347
 SILENCE_PADDING_DURATION_S = 1.5
 
 

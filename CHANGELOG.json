@@ -5,10 +5,18 @@
     "changelog": [
       {
         "category": "General",
+        "date": "2025-07-17",
+        "version": "0.6.3",
+        "changes": [
+          "Fixed Python version compatibility checks in setup.bat and documentation to explicitly require Python 3.10-3.12, addressing Pillow wheel availability issue reported by @Theo-Deffenbaugh."
+        ]
+      },
+      {
+        "category": "General",
         "date": "2025-07-08",
         "version": "0.6.2",
         "changes": [
-          "Fixed the silent-start timeout feature to correctly respect user settings.",
+                    "Fixed the silent-start timeout feature to correctly respect user settings.",
           "Added a 'Fine-Tuning' section to the README to document advanced user-configurable settings.",
           "Attempted fix for issue with native caps lock functionality being activated randomly."
         ]

@@ -54,6 +54,7 @@ While most settings can be controlled from the tray menu, you can fine-tune the 
 | --- | --- | --- | --- |
 | `silent_start_timeout` | Duration in seconds to wait for sound at the beginning of a recording before automatically canceling. Set to `null` to disable. | `4.0` | `2.0` to `5.0` |
 | `silence_threshold` | The audio level (RMS) below which sound is considered silence. Lower values are more sensitive. | `0.01` | `0.005` (very quiet) to `0.02` (noisier) |
+| `log_retention_days` | Number of days to keep log files. | `60` | `14`, `90`, `null` (indefinitely) |
 | `stt_provider` | The speech-to-text service to use. | `"openai"` | `"openai"`, `"google"` |
 | `openai_stt_model` | The specific model to use for OpenAI's service. `gpt-4o-transcribe` is recommended for highest accuracy. | `"gpt-4o-transcribe"` | `"gpt-4o-transcribe"`, `"gpt-4o-mini-transcribe"` |
 
@@ -63,8 +64,9 @@ While most settings can be controlled from the tray menu, you can fine-tune the 
 - Extensible architecture for adding new STT providers (Google Cloud, Azure, etc.)
 
 ## Known Issues/Limitations
-- For now, only supporting Windows OS and Python 3.10+
-- Brittle start script, `run_voice_typing.bat` sometimes just stops working silently so I fall back to running `voice_typing.pyw` from the command line
+- For now, only supporting Windows OS and Python 3.10 - 3.12
+- When using the `gpt-4o-transcribe` model, the last phrase that you say may get cut off. This is a [known limitation](https://community.openai.com/t/gpt-4o-transcribe-truncates-the-transcript/1148347).
+- When using the `gpt-4o-transcribe` model to transcribe spoken instructions, sometimes it responds to them or carries them out.
 - Untested update mechanism ([let me know if it doesn't work](https://github.com/jason-m-hicks/better-voice-typing/issues))
 - Recordings may not produce transcriptions if your microphone's audio level is too low
 - Maximum recording duration of ~10 minutes per transcription due to OpenAI Whisper API's 25MB file size limit
@@ -73,11 +75,13 @@ While most settings can be controlled from the tray menu, you can fine-tune the 
 
 For solutions to common problems, see the [**Troubleshooting Guide**](TROUBLESHOOTING.md).
 
+You can find detailed application logs in `C:\Users\{YourUsername}\Documents\VoiceTyping\logs`.
+
 ## Setup/Installation - For Users
 
 ### Quick Start (Windows)
 
-* Requires Python 3.10 or higher (check with `python --version`) - get from [python.org](https://python.org)
+* Requires Python 3.10 - 3.12 (check with `python --version`) - get from [python.org](https://python.org)
 * Requires `uv` CLI tool (check with `uv --version`) - get from [uv installation guide](https://docs.astral.sh/uv/getting-started/#installation)
 
 1. Download this project by clicking the green "Code" button at top of page → "Download ZIP" or clone the repo
@@ -129,7 +133,7 @@ To update to the latest version:
 
 1. Clone the repo
 2. Ensure you have `uv` installed (see [uv installation guide](https://docs.astral.sh/uv/getting-started/#installation))
-3. Create a virtual environment with `uv venv --python ">=3.8"`
+3. Create a virtual environment with `uv venv --python ">=3.10,<3.13"`
 4. Activate with `.venv\Scripts\activate`
 5. Install dependencies with `uv pip install -r requirements.txt`
 6. Create a `.env` file based on `.env.example` by running `cp .env.example .env`
@@ -146,7 +150,7 @@ To update to the latest version:
    .\.venv\Scripts\python.exe .\voice_typing.pyw --debug
    ```
 
-## TODO
+## TODO/Roadmap
 
 Want to request a feature or report a bug? [Create an issue](https://github.com/Elevate-Code/better-voice-typing/issues)
 

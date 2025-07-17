@@ -27,19 +27,30 @@ pause
 goto :KEEP_OPEN
 
 :PYTHON_FOUND
-REM Check for a suitable Python version (3.8+)
+REM Check for a suitable Python version (3.10-3.12)
 for /f "tokens=1,2 delims=." %%A in ('%PYTHON_CMD% -c "import sys; print(sys.version.split()[0])"') do (
     set PYMAJOR=%%A
     set PYMINOR=%%B
 )
 
 if %PYMAJOR% LSS 3 (
-    echo Error: Python 3.8 or newer is required. Found Python %PYMAJOR%.%PYMINOR%
+    echo Error: Python 3.10-3.12 is required. Found Python %PYMAJOR%.%PYMINOR%
     goto :PYTHON_VERSION_ERROR
 )
 
-if %PYMAJOR% == 3 if %PYMINOR% LSS 8 (
-    echo Error: Python 3.8 or newer is required. Found Python %PYMAJOR%.%PYMINOR%
+if %PYMAJOR% == 3 if %PYMINOR% LSS 10 (
+    echo Error: Python 3.10-3.12 is required. Found Python %PYMAJOR%.%PYMINOR%
+    goto :PYTHON_VERSION_ERROR
+)
+
+if %PYMAJOR% == 3 if %PYMINOR% GTR 12 (
+    echo Error: Python 3.10-3.12 is required. Found Python %PYMAJOR%.%PYMINOR%
+    echo Note: Pillow library does not yet support Python 3.13+
+    goto :PYTHON_VERSION_ERROR
+)
+
+if %PYMAJOR% GTR 3 (
+    echo Error: Python 3.10-3.12 is required. Found Python %PYMAJOR%.%PYMINOR%
     goto :PYTHON_VERSION_ERROR
 )
 
@@ -75,7 +86,7 @@ if exist .venv (
 :SKIP_UPDATE
 REM First time setup continues here...
 echo Creating virtual environment with uv...
-uv venv --python ">=3.8"
+uv venv --python ">=3.10,<3.13"
 if errorlevel 1 (
     echo Error: Failed to create virtual environment.
     pause
@@ -128,8 +139,8 @@ goto :KEEP_OPEN
 
 :PYTHON_VERSION_ERROR
 echo.
-echo If you have another Python installation (3.8+) that isn't in your PATH:
-echo 1. Ensure the newer Python is added to your PATH environment variable, or
+echo If you have another Python installation (3.10-3.12) that isn't in your PATH:
+echo 1. Ensure the Python 3.10-3.12 is added to your PATH environment variable, or
 echo 2. Specify the full path to Python when running this script
 pause
 goto :KEEP_OPEN
