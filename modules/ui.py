@@ -12,10 +12,17 @@ from modules.screen_utils import get_primary_monitor_geometry
 class UIFeedback:
     pyautogui_lock = threading.Lock()
 
-    def __init__(self, position: str = 'top-right'):
+    def __init__(self, position: str = 'top-right', size: str = 'normal'):
         # Store desired position; fallback to default if invalid
-        valid_positions = {'top-right', 'top-left', 'bottom-right', 'bottom-left'}
+        valid_positions = {'top-right', 'top-left', 'bottom-right', 'bottom-left', 'top-center', 'bottom-center'}
         self.position = position if position in valid_positions else 'top-right'
+
+        # Store desired size; fallback to default if invalid
+        valid_sizes = {'normal', 'mini'}
+        self.size = size if size in valid_sizes else 'normal'
+
+        # Configure dimensions based on size
+        self._configure_size_attributes()
 
         # Create the floating window
         self.root = tk.Tk()
@@ -30,20 +37,24 @@ class UIFeedback:
         self.indicator.configure(bg='red')
 
         # Create main frame
-        self.frame = tk.Frame(self.indicator, bg='red')
-        self.frame.pack(expand=True, fill='both', padx=2, pady=2)
+        # Set borderwidth and highlightthickness to 0 to remove any hidden padding.
+        self.frame = tk.Frame(self.indicator, bg='red', borderwidth=0, highlightthickness=0)
+        self.frame.pack(fill='both', padx=self.frame_padding, pady=self.frame_padding)
 
         # Create label with click binding
-        self.label = tk.Label(self.frame, text="🎤 Recording (click to cancel)",
-                            fg='white', bg='red', padx=10, pady=5,
-                            cursor="hand2")  # Change cursor to hand on hover
+        font_config = ('TkDefaultFont', self.font_size) if self.font_size else None
+        self.label = tk.Label(self.frame, text=self.label_text,
+                            fg='white', bg='red', padx=self.label_padx, pady=self.label_pady,
+                            cursor="hand2", font=font_config)  # Change cursor to hand on hover
         self.label.pack()
 
         # Create audio level indicator (initially hidden)
-        self.level_canvas = tk.Canvas(self.frame, height=4, bg='darkred',
-                                    highlightthickness=0)
-        self.level_canvas.pack(fill='x', padx=4, pady=(0, 4))
-        self.level_bar = self.level_canvas.create_rectangle(0, 0, 0, 4,
+        # Set an initial width of 1px to prevent the canvas from dictating the window's width.
+        # It will expand horizontally to fill the frame due to `fill='x'`.
+        self.level_canvas = tk.Canvas(self.frame, width=1, height=self.level_height, bg='darkred',
+                                    highlightthickness=0, borderwidth=0)
+        self.level_canvas.pack(fill='x', padx=self.level_padx, pady=self.level_pady)
+        self.level_bar = self.level_canvas.create_rectangle(0, 0, 0, self.level_height,
                                                           fill='white', width=0)
 
         # Add pulsing state variables
@@ -74,6 +85,27 @@ class UIFeedback:
         # Update label text color to be more visible on warning background
         self.label.configure(fg='black')  # Will be dynamically changed based on state
 
+    def _configure_size_attributes(self) -> None:
+        """Sets UI dimension attributes based on self.size."""
+        if self.size == 'mini':
+            self.label_padx = 5
+            self.label_pady = 3
+            self.level_height = 3
+            self.level_padx = 2
+            self.level_pady = (0, 2)
+            self.font_size = 9
+            self.frame_padding = 0
+            self.label_text = "🎤 Recording"
+        else:  # normal
+            self.label_padx = 10
+            self.label_pady = 5
+            self.level_height = 4
+            self.level_padx = 4
+            self.level_pady = (0, 4)
+            self.font_size = None
+            self.frame_padding = 0
+            self.label_text = "🎤 Recording (click to cancel)"
+
     def _position_window(self) -> None:
         """Positions the indicator window based on the configured corner."""
         self.indicator.update_idletasks()
@@ -95,15 +127,19 @@ class UIFeedback:
             mon_h = self.root.winfo_screenheight()
 
         margin = 15
+        taskbar_offset = 40  # Offset to clear the Windows taskbar
+
         # Compute x
         if 'right' in self.position:
             pos_x = mon_x + mon_w - win_w - margin
-        else:  # left
+        elif 'left' in self.position:
             pos_x = mon_x + margin
+        else:  # center
+            pos_x = mon_x + (mon_w - win_w) // 2
 
         # Compute y
         if 'bottom' in self.position:
-            pos_y = mon_y + mon_h - win_h - margin
+            pos_y = mon_y + mon_h - win_h - margin - taskbar_offset
         else:  # top
             pos_y = mon_y + margin
 
@@ -112,9 +148,33 @@ class UIFeedback:
     # Public method to allow position change at runtime
     def set_position(self, position: str) -> None:
         """Update the indicator corner position and reposition it immediately."""
-        valid_positions = {'top-right', 'top-left', 'bottom-right', 'bottom-left'}
+        valid_positions = {'top-right', 'top-left', 'bottom-right', 'bottom-left', 'top-center', 'bottom-center'}
         if position in valid_positions:
             self.position = position
+            self._position_window()
+
+    def set_size(self, size: str) -> None:
+        """Update the indicator size and reconfigure UI elements."""
+        valid_sizes = {'normal', 'mini'}
+        if size in valid_sizes and self.size != size:
+            self.size = size
+
+            # Reconfigure dimensions based on new size
+            self._configure_size_attributes()
+
+            # Update UI elements with new dimensions
+            font_config = ('TkDefaultFont', self.font_size) if self.font_size else None
+            self.label.configure(padx=self.label_padx, pady=self.label_pady, font=font_config)
+            self.frame.configure(padx=self.frame_padding, pady=self.frame_padding)
+            self.level_canvas.configure(height=self.level_height)
+            self.level_canvas.pack_configure(padx=self.level_padx, pady=self.level_pady)
+
+            # Update label text based on current status
+            current_text = self.label.cget('text')
+            if '🎤 Recording' in current_text:
+                self.label.configure(text=self.label_text)
+
+            # Reposition window with new size
             self._position_window()
 
     def update_audio_level(self, level: float) -> None:
@@ -122,7 +182,7 @@ class UIFeedback:
         if self.pulsing:  # Only update when recording
             width = self.level_canvas.winfo_width()
             bar_width = int(width * min(1.0, max(0.0, level)))
-            self.level_canvas.coords(self.level_bar, 0, 0, bar_width, 4)
+            self.level_canvas.coords(self.level_bar, 0, 0, bar_width, self.level_height)
 
     def _pulse(self) -> None:
         if self.pulsing:
@@ -142,14 +202,15 @@ class UIFeedback:
 
         self.pulse_colors = self.RECORDING_COLORS
         self.label.configure(
-            text="🎤 Recording (click to cancel)",
+            text=self.label_text,
             fg='white'
         )
-        self.level_canvas.pack(fill='x', padx=4, pady=(0, 4))
+        self.level_canvas.pack(fill='x', padx=self.level_padx, pady=self.level_pady)
         self._position_window()
         self.indicator.deiconify()
         self.pulsing = True
         self._pulse()
+        self._snap_to_content()
 
     def stop_listening_animation(self) -> None:
         """Stop the recording animation"""
@@ -163,7 +224,7 @@ class UIFeedback:
         self.frame.configure(bg=self.RECORDING_COLORS[0])
         self.label.configure(bg=self.RECORDING_COLORS[0])
         # Reset audio level
-        self.level_canvas.coords(self.level_bar, 0, 0, 0, 4)
+        self.level_canvas.coords(self.level_bar, 0, 0, 0, self.level_height)
 
     def _handle_click(self, event: tk.Event) -> None:
         if self.retry_available and self.on_retry_callback:
@@ -212,6 +273,7 @@ class UIFeedback:
             text=message
         )
         self._position_window()
+        self._snap_to_content()
 
         # Hide the level indicator during warning
         self.level_canvas.pack_forget()
@@ -254,7 +316,7 @@ class UIFeedback:
         """Reset UI state and hide the indicator"""
         self.warning_timer = None
         self.retry_available = False
-        self.level_canvas.pack(fill='x', padx=4, pady=(0, 4))  # Restore level indicator
+        self.level_canvas.pack(fill='x', padx=self.level_padx, pady=self.level_pady)  # Restore level indicator
         self.indicator.withdraw()
         # Reset to recording state colors
         self.indicator.configure(bg=self.RECORDING_COLORS[0])
@@ -268,6 +330,10 @@ class UIFeedback:
         """Update UI appearance based on status configuration"""
         # Update colors and text
         text = error_message if error_message else config.ui_text
+
+        # Override text for recording status in mini mode
+        if self.size == 'mini' and config.ui_text == "🎤 Recording (click to cancel)":
+            text = "🎤 Recording"
 
         self.indicator.configure(bg=config.ui_color)
         self.frame.configure(bg=config.ui_color)
@@ -323,6 +389,26 @@ class UIFeedback:
         self.pulsing = False
         self.indicator.withdraw()
         self.root.quit()
+
+
+    def _snap_to_content(self) -> None:
+        """
+        Continuously adjusts the window size to fit its content.
+        Forces the window to "shrink-wrap" its contents by continuously measuring the
+        required space and resizing the window to match. This prevents "mysterious margins".
+        """
+        try:
+            self.indicator.update_idletasks()
+            w = self.indicator.winfo_reqwidth()
+            h = self.indicator.winfo_reqheight()
+            self.indicator.geometry(f"{w}x{h}")
+
+            # Schedule the next check
+            if self.pulsing or self.warning_timer:
+                self.indicator.after(100, self._snap_to_content)
+        except tk.TclError:
+            # This can happen if the window is destroyed while the after() call is pending
+            pass
 
 
 if __name__ == "__main__":

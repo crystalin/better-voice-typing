@@ -18,28 +18,26 @@ A lightweight Python desktop app for Windows that improves upon Windows Voice Ty
 
 ## Changelog
 
-✨ New major version, v0.6.0, see [docs/stt-upgrade-migration.md](docs/stt-upgrade-migration.md) for more details.
-
-For a detailed history of changes, see the [CHANGELOG.json](CHANGELOG.json) file.
+See the [CHANGELOG.json](CHANGELOG.json) file for latest changes or the [releases page](https://github.com/Elevate-Code/better-voice-typing/releases) for major releases.
 
 ## Features
 
-### Recording Controls
+#### Recording Controls
 - **Toggle Recording**: Caps Lock (Ctrl+Caps Lock to toggle Caps Lock on/off)
 - **Cancel Recording/Processing**: Click the recording indicator to cancel recording or transcription
 - **Copy Last Transcription**: If your cursor was misplaced, left-click tray icon to copy last transcription
 
 ### Tray Options/Settings
-- Recent Transcriptions: Access previous transcriptions, copy to clipboard
-- Microphone Selection: Choose your preferred input device
+- Retry Last Transcription: Attempts to re-process the last audio recording, useful if the first attempt failed or was inaccurate.
+- Recent Transcriptions: Access previous transcriptions, copy to clipboard.
+- Microphone Selection: Choose your preferred input device.
 - Settings:
-  - Continuous Capture: Default recording mode. Record audio until the user stops it, send it all at once to the STT provider
-  - Speech-to-Text: Select your STT provider (OpenAI, Google Cloud) and model (Whisper, GPT-4o, GPT-4o Mini)
-  - Silent-Start Timeout: Cancels the recording if no sound is detected within the first few seconds, preventing accidental recordings
-  - Clean Transcription: Enable/disable further refinement of the transcription using a configurable LLM
-  - UI Indicator Position: Change the corner of the screen where the recording indicator appears.
-- Restart: Quickly restart the application, like when its not responding to the keyboard shortcut
-- Exit: Exit the application
+  - Continuous Capture: Default recording mode. Record audio until the user stops it, send it all at once to the STT provider.
+  - Clean Transcription: Enable/disable further refinement of the transcription using a configurable LLM.
+  - Silent-Start Timeout: Cancels the recording if no sound is detected within the first few seconds, preventing accidental recordings.
+  - Recording Indicator: Customize the on-screen size and position of the recording indicator.
+  - Speech-to-Text: Select your STT provider (OpenAI, Google Cloud) and model (Whisper, GPT-4o, GPT-4o Mini).
+- Restart: Quickly restart the application, like when it's not responding to the keyboard shortcut.
 
 ### Tray History
 - Keeps track of recent transcriptions

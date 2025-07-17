@@ -213,6 +213,14 @@ def setup_tray_icon(app):
         if hasattr(app, 'update_icon_menu') and app.update_icon_menu:
             app.update_icon_menu()
 
+    def change_ui_size(new_size: str):
+        """Update settings and resize indicator."""
+        app.settings.set('ui_indicator_size', new_size)
+        app.ui_feedback.set_size(new_size)
+        # Refresh menu to update checkmarks
+        if hasattr(app, 'update_icon_menu') and app.update_icon_menu:
+            app.update_icon_menu()
+
     def on_exit(icon, item):
         """Log exit and close the application."""
         app.logger.info("Application exiting.")
@@ -273,27 +281,50 @@ def setup_tray_icon(app):
                         enabled=False
                     ),
                     pystray.MenuItem(
-                        'Recording Indicator Position',
+                        'Recording Indicator',
                         pystray.Menu(
+                            # Size options
                             pystray.MenuItem(
-                                'Top Right',
-                                lambda icon, item: change_ui_position('top-right'),
-                                checked=lambda item: app.settings.get('ui_indicator_position') == 'top-right'
+                                'Normal Size',
+                                lambda icon, item: change_ui_size('normal'),
+                                checked=lambda item: app.settings.get('ui_indicator_size') == 'normal'
                             ),
+                            pystray.MenuItem(
+                                'Mini Size',
+                                lambda icon, item: change_ui_size('mini'),
+                                checked=lambda item: app.settings.get('ui_indicator_size') == 'mini'
+                            ),
+                            pystray.Menu.SEPARATOR,
+                            # Position options
                             pystray.MenuItem(
                                 'Top Left',
                                 lambda icon, item: change_ui_position('top-left'),
                                 checked=lambda item: app.settings.get('ui_indicator_position') == 'top-left'
                             ),
                             pystray.MenuItem(
-                                'Bottom Right',
-                                lambda icon, item: change_ui_position('bottom-right'),
-                                checked=lambda item: app.settings.get('ui_indicator_position') == 'bottom-right'
+                                'Top Center',
+                                lambda icon, item: change_ui_position('top-center'),
+                                checked=lambda item: app.settings.get('ui_indicator_position') == 'top-center'
+                            ),
+                            pystray.MenuItem(
+                                'Top Right',
+                                lambda icon, item: change_ui_position('top-right'),
+                                checked=lambda item: app.settings.get('ui_indicator_position') == 'top-right'
                             ),
                             pystray.MenuItem(
                                 'Bottom Left',
                                 lambda icon, item: change_ui_position('bottom-left'),
                                 checked=lambda item: app.settings.get('ui_indicator_position') == 'bottom-left'
+                            ),
+                            pystray.MenuItem(
+                                'Bottom Center',
+                                lambda icon, item: change_ui_position('bottom-center'),
+                                checked=lambda item: app.settings.get('ui_indicator_position') == 'bottom-center'
+                            ),
+                            pystray.MenuItem(
+                                'Bottom Right',
+                                lambda icon, item: change_ui_position('bottom-right'),
+                                checked=lambda item: app.settings.get('ui_indicator_position') == 'bottom-right'
                             ),
                         )
                     ),

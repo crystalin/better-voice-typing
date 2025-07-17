@@ -24,7 +24,8 @@ class Settings:
             'favorite_microphones': [],
 
             # UI customization
-            'ui_indicator_position': 'top-right',  # 'top-right', 'top-left', 'bottom-right', 'bottom-left'
+            'ui_indicator_position': 'top-right',  # 'top-right', 'top-left', 'bottom-right', 'bottom-left', 'top-center', 'bottom-center'
+            'ui_indicator_size': 'normal',  # 'normal', 'mini'
 
             # Logging
             'log_retention_days': 60

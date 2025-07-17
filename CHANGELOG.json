@@ -6,6 +6,16 @@
       {
         "category": "General",
         "date": "2025-07-17",
+        "version": "0.6.4",
+        "changes": [
+          "Added a 'mini' UI mode for a more compact recording indicator, configurable via tray settings and the new `ui_indicator_size` setting in `settings.json`.",
+          "Added `top-center` and `bottom-center` UI indicator positions and applied an offset to bottom positions to prevent being obscured by the taskbar.",
+          "Reorganized the 'Recording Indicator' tray menu to group size and position settings for better usability."
+        ]
+      },
+      {
+        "category": "General",
+        "date": "2025-07-17",
         "version": "0.6.3",
         "changes": [
           "Fixed Python version compatibility checks in setup.bat and documentation to explicitly require Python 3.10-3.12, addressing Pillow wheel availability issue reported by @Theo-Deffenbaugh.",
