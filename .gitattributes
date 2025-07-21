@@ -1,0 +1,11 @@
+# Ensure batch files always have Windows line endings for compatibility
+*.bat text eol=crlf
+
+# Enforce consistent Unix line endings for Python scripts (best practice)
+*.py text eol=lf
+*.pyw text eol=lf
+
+# Let Git handle markdown and other text files automatically
+*.md text=auto
+*.txt text=auto
+*.json text=auto

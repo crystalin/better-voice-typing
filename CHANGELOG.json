@@ -5,6 +5,15 @@
     "changelog": [
       {
         "category": "General",
+        "date": "2025-07-21",
+        "version": "0.6.5",
+        "changes": [
+          "Fixed run_voice_typing.bat file having Unix line endings in the repository, which could cause issues on Windows systems when downloaded directly from GitHub. Thanks to @Theo-Deffenbaugh for reporting this issue.",
+          "Added .gitattributes file to ensure batch files always maintain Windows line endings (CRLF) in the repository, preventing future line ending issues."
+        ]
+      },
+      {
+        "category": "General",
         "date": "2025-07-17",
         "version": "0.6.4",
         "changes": [
