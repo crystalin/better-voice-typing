@@ -13,19 +13,22 @@ logger = logging.getLogger('voice_typing')
 
 # NOTE: Temp workaround for OpenAI bug where transcription cuts off.
 # See: https://community.openai.com/t/gpt-4o-transcribe-truncates-the-transcript/1148347
-SILENCE_PADDING_DURATION_S = 1.5
+PADDING_DURATION_S = 1.5
+NOISE_AMPLITUDE = 0.08
 
 
-def _pad_audio_with_silence(
+def _pad_audio_with_noise(
     audio_data: Union[bytes, str, Path],
-    duration_s: float
+    duration_s: float,
+    amplitude: float
 ) -> io.BytesIO:
     """
-    Pads audio data with silence at the end.
+    Pads audio data with quiet brown noise at the end for a more organic sound.
 
     Args:
         audio_data: Audio data as bytes, file path string, or Path object.
-        duration_s: Duration of silence to add in seconds.
+        duration_s: Duration of noise to add in seconds.
+        amplitude: The peak amplitude of the noise.
 
     Returns:
         An in-memory BytesIO object containing the padded audio in WAV format.
@@ -34,8 +37,19 @@ def _pad_audio_with_silence(
     data, samplerate = sf.read(input_stream, dtype='float32')
 
     padding_samples = int(duration_s * samplerate)
-    silence = np.zeros(padding_samples, dtype='float32')
-    padded_data = np.concatenate([data, silence])
+
+    # Generate white noise and integrate it to create brown noise (more "natural" sounding)
+    white_noise = np.random.randn(padding_samples).astype('float32')
+    brown_noise_unscaled = np.cumsum(white_noise)
+
+    # Normalize to the target amplitude to prevent clipping
+    max_abs_val = np.max(np.abs(brown_noise_unscaled))
+    if max_abs_val > 0:
+        noise = (brown_noise_unscaled / max_abs_val) * amplitude
+    else:
+        noise = np.zeros_like(brown_noise_unscaled)
+
+    padded_data = np.concatenate([data, noise])
 
     buffer = io.BytesIO()
     sf.write(buffer, padded_data, samplerate, format='WAV', subtype='PCM_16')
@@ -86,8 +100,10 @@ class OpenAITranscriber:
             try:
                 # Conditionally pad audio for gpt-4o models as a workaround
                 if "gpt-4o" in self.model:
-                    logger.debug(f"Padding audio with {SILENCE_PADDING_DURATION_S}s of silence for {self.model}")
-                    padded_buffer = _pad_audio_with_silence(audio_data, SILENCE_PADDING_DURATION_S)
+                    logger.debug(f"Padding audio with {PADDING_DURATION_S}s of quiet noise for {self.model}")
+                    padded_buffer = _pad_audio_with_noise(
+                        audio_data, PADDING_DURATION_S, NOISE_AMPLITUDE
+                    )
 
                     filename = "audio.wav"
                     if isinstance(audio_data, (str, Path)):

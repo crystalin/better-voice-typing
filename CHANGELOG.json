@@ -5,6 +5,14 @@
     "changelog": [
       {
         "category": "General",
+        "date": "2025-07-23",
+        "version": "0.6.6",
+        "changes": [
+          "Improved the workaround for OpenAI's transcription cut-off issue by replacing silent padding with more effective brown noise padding."
+        ]
+      },
+      {
+        "category": "General",
         "date": "2025-07-21",
         "version": "0.6.5",
         "changes": [

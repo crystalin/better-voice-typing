@@ -22,3 +22,11 @@ You can make the app more sensitive to quiet audio by adjusting the `silence_thr
 | `0.001`   | -60 dB        | Very distant mic or a noisy environment.       |
 
 **Debugging Tip**: To see exactly why a recording was discarded, check the latest log file in your `Documents\VoiceTyping\logs\` folder and listen to the `temp_audio.wav` audio file. The log will contain a warning with the calculated audio level of your recording, which can help you fine-tune the threshold.
+
+## Transcription is Inaccurate or Cut Off
+
+With certain models like OpenAI's `gpt-4o-transcribe`, a known issue can cause the end of a transcription to be cut off. While the application includes a workaround to minimize this, it can still happen occasionally.
+
+### Solution: Retry Transcription
+
+If you notice a transcription is cut off or inaccurate, the most effective solution is to use the **Retry Last Transcription** feature from the tray icon menu. This re-processes the same audio, which often produces the correct result on the second attempt.

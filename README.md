@@ -63,7 +63,8 @@ While most settings can be controlled from the tray menu, you can fine-tune the 
 
 ## Known Issues/Limitations
 - For now, only supporting Windows OS and Python 3.10 - 3.12
-- When using the `gpt-4o-transcribe` model, the last phrase that you say may get cut off. This is a [known limitation](https://community.openai.com/t/gpt-4o-transcribe-truncates-the-transcript/1148347).
+- When using `gpt-4o-transcribe`, the end of a transcription may occasionally be cut off - this is a [known model issue](https://community.openai.com/t/
+gpt-4o-transcribe-truncates-the-transcript/1148347). A workaround is in place to minimize this, but if it occurs, use the Retry Last Transcription and see the [Troubleshooting Guide](TROUBLESHOOTING.md).
 - When using the `gpt-4o-transcribe` model to transcribe spoken instructions, sometimes it responds to them or carries them out.
 - Untested update mechanism ([let me know if it doesn't work](https://github.com/jason-m-hicks/better-voice-typing/issues))
 - Recordings may not produce transcriptions if your microphone's audio level is too low
