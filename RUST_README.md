@@ -62,26 +62,32 @@ src/
 
 ### Build Instructions
 
-1. **Update Rust to nightly** (temporary requirement):
-   ```bash
+⚠️ **IMPORTANT**: This application is **Windows-only** and uses Windows-specific APIs. It will not compile on Linux/macOS.
+
+1. **On Windows**, update Rust to nightly (temporary requirement):
+   ```powershell
    rustup update nightly
    rustup default nightly
    ```
 
 2. **Build the project**:
-   ```bash
+   ```powershell
    cargo build --release
    ```
 
 3. **Run the application**:
-   ```bash
+   ```powershell
    .\run_voice_typing.bat
    ```
 
    Or directly:
-   ```bash
+   ```powershell
    .\target\release\voice-typing.exe
    ```
+
+### Linux/WSL Note
+
+If you try to build on Linux/WSL, you'll see compilation errors for `keyboard.rs` and `ui.rs`. This is **expected** because these modules use Windows-specific APIs (`windows` crate) that only compile on Windows targets. The application must be built and run on Windows.
 
 ### Known Issues
 
