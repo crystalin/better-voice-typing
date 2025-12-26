@@ -20,7 +20,7 @@ from modules.settings import Settings
 from modules.transcribe import transcribe_audio
 from modules.tray import setup_tray_icon
 from modules.ui import UIFeedback
-from modules.audio_manager import set_input_device, get_default_device_id, DeviceIdentifier, find_device_by_identifier
+from modules.audio_manager import set_input_device, get_default_device_id, DeviceIdentifier, find_device_by_identifier, get_current_device_sample_rate
 from modules.status_manager import StatusManager, AppStatus
 from modules.screen_utils import set_process_dpi_awareness, hide_console_window
 from modules.logger import setup_logging
@@ -51,10 +51,6 @@ class VoiceTypingApp:
         ui_position = self.settings.get('ui_indicator_position')
         ui_size = self.settings.get('ui_indicator_size')
         self.ui_feedback = UIFeedback(position=ui_position, size=ui_size)
-        self.recorder = AudioRecorder(
-            level_callback=self.ui_feedback.update_audio_level,
-            silent_start_timeout=silent_start_timeout
-        )
         self.ui_feedback.set_click_callback(self.handle_ui_click)
         self.recording = False
         self.ctrl_pressed = False
@@ -68,8 +64,19 @@ class VoiceTypingApp:
         # Log settings information
         self.logger.info(f"Application settings:\n{json.dumps(self.settings.current_settings)}")
 
-        # Initialize microphone
+        # Initialize microphone BEFORE creating the recorder
         self._initialize_microphone()
+        
+        # Now get the current device sample rate after microphone is set
+        sample_rate = get_current_device_sample_rate()
+        self.logger.info(f"Using sample rate: {sample_rate} Hz")
+        
+        # Create recorder with correct sample rate
+        self.recorder = AudioRecorder(
+            level_callback=self.ui_feedback.update_audio_level,
+            silent_start_timeout=silent_start_timeout,
+            sample_rate=sample_rate
+        )
 
         # Initialize status manager first
         self.status_manager = StatusManager()
@@ -175,6 +182,16 @@ class VoiceTypingApp:
                 set_input_device(device_id)
                 self.settings.set('selected_microphone', identifier._asdict())
                 self.logger.info(f"Microphone changed to: {device['name']} (ID: {device_id}, Channels: {device['max_input_channels']}, Sample Rate: {device['default_samplerate']} Hz)")
+                
+                # Recreate recorder with new sample rate
+                sample_rate = int(device['default_samplerate'])
+                silent_start_timeout = self.settings.get('silent_start_timeout')
+                self.recorder = AudioRecorder(
+                    level_callback=self.ui_feedback.update_audio_level,
+                    silent_start_timeout=silent_start_timeout,
+                    sample_rate=sample_rate
+                )
+                self.logger.info(f"Recorder recreated with sample rate: {sample_rate} Hz")
             else:
                 raise ValueError(f"Device with ID {device_id} not found")
             # Stop any ongoing recording when changing microphone

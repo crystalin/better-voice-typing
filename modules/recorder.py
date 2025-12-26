@@ -9,11 +9,11 @@ import soundfile as sf
 from modules.settings import Settings
 
 # NOTE: Optimized settings for speech recording
-# - 16kHz sample rate is optimal for STT, using 22.05kHz for safety margin
+# - Sample rate now uses device default or falls back to 48kHz (common standard)
 # - 16-bit depth is standard for speech
 # - Mono channel as stereo provides no benefit
 # - WAV format ensures compatibility and quality
-# NOTE: Ends up being ~2.6 megabytes for every 60 seconds with these settings.
+# NOTE: File size varies with sample rate (~5.5MB/min at 48kHz, ~2.6MB/min at 22kHz)
 
 # Initialize settings to get configurable values
 settings = Settings()
@@ -35,7 +35,8 @@ class AudioRecorder:
 
     def __init__(self, filename: str = 'temp_audio.wav',
                  level_callback: Optional[Callable[[float], None]] = None,
-                 silent_start_timeout: Optional[float] = None) -> None:
+                 silent_start_timeout: Optional[float] = None,
+                 sample_rate: Optional[int] = None) -> None:
         self.filename = filename
         self.recording = False
         self.thread: Optional[threading.Thread] = None
@@ -50,6 +51,18 @@ class AudioRecorder:
         self.auto_stopped = False
         self.recording_start_time: Optional[float] = None
         self.initial_sound_detected = False  # Track if we've detected any sound
+        
+        # Determine sample rate to use
+        if sample_rate:
+            self.sample_rate = sample_rate
+        else:
+            # Try to get the default device's sample rate
+            try:
+                device_info = sd.query_devices(None, 'input')
+                self.sample_rate = int(device_info['default_samplerate'])
+            except:
+                # Fallback to 48kHz if we can't query the device
+                self.sample_rate = 48000
 
     def _calculate_level(self, indata: np.ndarray) -> float:
         """Calculate audio level from input data"""
@@ -149,13 +162,71 @@ class AudioRecorder:
 
         try:
             with sf.SoundFile(self.filename, mode='w',
-                            samplerate=22050,
+                            samplerate=self.sample_rate,
                             channels=1,
                             subtype='PCM_16',
                             format='WAV') as self.file:
-                with sd.InputStream(samplerate=22050,
-                                  channels=1,
-                                  callback=audio_callback) as self.stream:
+                
+                # Try to create input stream with different configurations
+                stream_created = False
+                configurations = [
+                    # (dtype, latency, blocksize)
+                    ('float32', None, 0),      # Default
+                    ('float32', 'high', 0),    # High latency for stability
+                    ('float32', 0.1, 0),       # 100ms latency
+                    ('int16', None, 0),        # Different data type
+                    ('int16', 'high', 0),      # Int16 with high latency
+                ]
+                
+                last_error = None
+                for dtype, latency, blocksize in configurations:
+                    try:
+                        self.stream = sd.InputStream(
+                            samplerate=self.sample_rate,
+                            channels=1,
+                            dtype=dtype,
+                            callback=audio_callback,
+                            latency=latency,
+                            blocksize=blocksize
+                        )
+                        stream_created = True
+                        break
+                    except Exception as config_error:
+                        last_error = config_error
+                        continue
+                
+                if not stream_created:
+                    # Try with a fallback sample rate
+                    fallback_rates = [48000, 44100, 22050, 16000]
+                    for rate in fallback_rates:
+                        if rate != self.sample_rate:
+                            try:
+                                print(f"Trying fallback sample rate: {rate}Hz")
+                                self.stream = sd.InputStream(
+                                    samplerate=rate,
+                                    channels=1,
+                                    dtype='float32',
+                                    callback=audio_callback,
+                                    latency='high'
+                                )
+                                self.sample_rate = rate  # Update to working rate
+                                # Need to recreate the file with new sample rate
+                                self.file.close()
+                                self.file = sf.SoundFile(self.filename, mode='w',
+                                                        samplerate=rate,
+                                                        channels=1,
+                                                        subtype='PCM_16',
+                                                        format='WAV')
+                                stream_created = True
+                                print(f"Using fallback sample rate: {rate}Hz")
+                                break
+                            except:
+                                continue
+                
+                if not stream_created:
+                    raise last_error or Exception("Could not create audio stream")
+                
+                with self.stream:
                     while self.recording:
                         sd.sleep(100)
         except Exception as e:

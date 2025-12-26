@@ -15,8 +15,8 @@ class CustomTranscriber:
 
     def __init__(
         self,
-        base_url: str = "http://192.168.0.5:8000",
-        model: str = "parakeet-tdt-0.6b-v2",
+        base_url: str = "https://parakeet.kaki.dev",
+        model: str = "parakeet-tdt-0.6b-v3",
         language: str = "en"
     ):
         """
@@ -67,11 +67,9 @@ class CustomTranscriber:
             if self.api_key:
                 headers['Authorization'] = f"Bearer {self.api_key}"
             
-            # Try common endpoint patterns
+            # Try common endpoint patterns (only /transcribe for this server)
             endpoints = [
-                f"{self.base_url}/transcribe",                # Simple format
-                f"{self.base_url}/v1/audio/transcriptions",  # OpenAI API v1 format
-                f"{self.base_url}/api/transcribe",            # API prefix format
+                f"{self.base_url}/transcribe",                # Simple format - the one that works
             ]
             
             last_error = None
@@ -93,7 +91,13 @@ class CustomTranscriber:
                     )
                     
                     if response.status_code == 200:
-                        return self._parse_response(response.json())
+                        json_response = response.json()
+                        # Check if it's an error response before parsing
+                        if isinstance(json_response, dict) and json_response.get('success') == False:
+                            error_msg = json_response.get('message', 'Transcription failed')
+                            # Don't continue trying other endpoints - this is the right endpoint but server has an error
+                            raise RuntimeError(f"Server error: {error_msg}")
+                        return self._parse_response(json_response)
                         
                     elif response.status_code == 422 or response.status_code == 400:
                         # Try with model parameter
@@ -114,7 +118,13 @@ class CustomTranscriber:
                         )
                         
                         if response.status_code == 200:
-                            return self._parse_response(response.json())
+                            json_response = response.json()
+                            # Check if it's an error response before parsing
+                            if isinstance(json_response, dict) and json_response.get('success') == False:
+                                error_msg = json_response.get('message', 'Transcription failed')
+                                # Don't continue trying other endpoints - this is the right endpoint but server has an error
+                                raise RuntimeError(f"Server error: {error_msg}")
+                            return self._parse_response(json_response)
                         else:
                             last_error = f"HTTP {response.status_code}: {response.text}"
                             
@@ -131,6 +141,9 @@ class CustomTranscriber:
                 except requests.exceptions.Timeout:
                     last_error = f"Request timeout to {endpoint}"
                     continue
+                except RuntimeError as e:
+                    # Server error - don't try other endpoints
+                    raise
                 except Exception as e:
                     last_error = str(e)
                     continue
@@ -155,6 +168,12 @@ class CustomTranscriber:
             The extracted transcription text
         """
         if isinstance(result, dict):
+            # Check for error response first
+            if 'success' in result and not result['success']:
+                error_msg = result.get('message', 'Transcription failed')
+                logger.error(f"Server returned error: {error_msg}")
+                raise RuntimeError(f"Server error: {error_msg}")
+            
             # Check for segments format (some models return this)
             if 'segments' in result and isinstance(result['segments'], list):
                 # Extract text from all segments and join them
