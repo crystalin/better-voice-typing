@@ -13,7 +13,7 @@ pub struct DeviceIdentifier {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
     #[serde(default = "default_silent_start_timeout")]
-    pub silent_start_timeout: f64,
+    pub silent_start_timeout: Option<f64>,
 
     #[serde(default = "default_silence_threshold")]
     pub silence_threshold: f64,
@@ -40,7 +40,7 @@ pub struct Settings {
     pub log_retention_days: u32,
 }
 
-fn default_silent_start_timeout() -> f64 { 4.0 }
+fn default_silent_start_timeout() -> Option<f64> { Some(4.0) }
 fn default_silence_threshold() -> f64 { 0.01 }
 fn default_stt_base_url() -> String { "https://parakeet.kaki.dev".to_string() }
 fn default_stt_model() -> String { "parakeet-tdt-0.6b-v3".to_string() }
@@ -51,7 +51,7 @@ fn default_log_retention() -> u32 { 60 }
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            silent_start_timeout: default_silent_start_timeout(),
+            silent_start_timeout: Some(4.0),
             silence_threshold: default_silence_threshold(),
             stt_base_url: default_stt_base_url(),
             stt_model: default_stt_model(),

@@ -14,6 +14,7 @@ use std::time::{Duration, Instant};
 const MIN_DURATION: f64 = 1.0;
 const SMOOTHING_FACTOR: f32 = 0.2;
 
+#[derive(Clone)]
 pub struct AudioDevice {
     pub name: String,
     pub channels: u32,
@@ -127,7 +128,8 @@ impl AudioRecorder {
         let silence_threshold = self.silence_threshold;
         let silent_start_timeout = self.silent_start_timeout;
 
-        let stream = match config.sample_format {
+        let sample_format = device.default_input_config()?.sample_format();
+        let stream = match sample_format {
             SampleFormat::F32 => {
                 device.build_input_stream(
                     config,
@@ -208,6 +210,8 @@ impl RecordingSession {
             state.is_recording = false;
         }
 
+        let path = self.path.clone();
+
         drop(self.stream);
 
         let writer = self.writer.lock().take();
@@ -219,7 +223,7 @@ impl RecordingSession {
         let was_auto_stopped = state.auto_stopped;
         drop(state);
 
-        let (is_valid, reason) = self.analyze_recording()?;
+        let (is_valid, reason) = analyze_recording(&path, self.sample_rate)?;
 
         Ok(RecordingResult {
             path: self.path,
@@ -232,11 +236,12 @@ impl RecordingSession {
     pub fn was_auto_stopped(&self) -> bool {
         self.recording_state.lock().auto_stopped
     }
+}
 
-    fn analyze_recording(&self) -> Result<(bool, Option<String>)> {
-        let mut reader = hound::WavReader::open(&self.path)?;
+fn analyze_recording(path: &PathBuf, sample_rate: u32) -> Result<(bool, Option<String>)> {
+        let mut reader = hound::WavReader::open(path)?;
 
-        let duration = reader.duration() as f64 / self.sample_rate as f64;
+        let duration = reader.duration() as f64 / sample_rate as f64;
         if duration < MIN_DURATION {
             return Ok((false, Some(format!("Recording too short ({:.1}s < {:.1}s)", duration, MIN_DURATION))));
         }
@@ -260,7 +265,6 @@ impl RecordingSession {
 
         Ok((true, None))
     }
-}
 
 pub struct RecordingResult {
     pub path: PathBuf,

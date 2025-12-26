@@ -1,5 +1,8 @@
 # ⚠️ for adding new packages, add a locked version here and then run `uv pip install -r requirements.txt`
 
+# Build tools
+pyinstaller==6.11.1
+
 # Core functionality
 python-dotenv==1.0.1  # Environment variables
 pynput==1.7.6  # Keyboard shortcuts

@@ -29,6 +29,7 @@ sandbox/
 # === Environment files ===
 .env
 .venv
+.venv-build
 env/
 venv/
 ENV/
@@ -127,3 +128,8 @@ dmypy.json
 
 # pytype static type analyzer
 .pytype/
+
+
+# Added by cargo
+
+/target

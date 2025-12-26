@@ -1,10 +1,19 @@
 import json
 import os
+import sys
 from typing import Any, Dict
 
 class Settings:
     def __init__(self) -> None:
-        self.settings_file: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'settings.json')
+        # Determine the application path for storing settings
+        if getattr(sys, 'frozen', False):
+            # If frozen (exe), use the executable's directory
+            self.base_path = os.path.dirname(sys.executable)
+        else:
+            # If running as script, use the project root (one level up from modules)
+            self.base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            
+        self.settings_file: str = os.path.join(self.base_path, 'settings.json')
         self.default_settings: Dict[str, Any] = {
             'continuous_capture': True,
             'smart_capture': False,

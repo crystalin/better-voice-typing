@@ -8,7 +8,7 @@ mod tray;
 mod ui;
 
 use anyhow::Result;
-use crossbeam_channel::{unbounded, Receiver, Sender};
+use crossbeam_channel::{unbounded, Receiver};
 use log::{error, info, warn};
 use parking_lot::Mutex;
 use std::path::PathBuf;
@@ -16,14 +16,14 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
-use audio::{AudioRecorder, RecordingSession};
+use audio::{AudioRecorder, RecordingResult, RecordingSession};
 use history::TranscriptionHistory;
 use keyboard::{KeyboardEvent, KeyboardListener};
 use settings::Settings;
 use stt::SttClient;
 use text_inserter::TextInserter;
-use tray::{TrayEvent, TrayManager};
-use ui::{AppStatus, UiCommand, UiFeedback};
+use tray::TrayManager;
+use ui::{AppStatus, UiFeedback};
 
 const TEMP_AUDIO_FILE: &str = "temp_audio.wav";
 
@@ -48,7 +48,7 @@ impl VoiceTypingApp {
 
         let mut audio_recorder = AudioRecorder::new(
             settings.silence_threshold,
-            Some(settings.silent_start_timeout),
+            settings.silent_start_timeout,
         )?;
         audio_recorder.set_default_device()?;
 
@@ -81,23 +81,16 @@ impl VoiceTypingApp {
         })
     }
 
-    fn run(self) -> Result<()> {
+    fn run(mut self) -> Result<()> {
         let (keyboard_event_sender, keyboard_event_receiver) = unbounded();
         let _keyboard_listener = KeyboardListener::new(keyboard_event_sender)?;
 
-        let app = Arc::new(self);
-
-        let app_clone = app.clone();
-        thread::spawn(move || {
-            app_clone.event_loop(keyboard_event_receiver);
-        });
-
-        UiFeedback::run_message_loop();
+        self.event_loop(keyboard_event_receiver);
 
         Ok(())
     }
 
-    fn event_loop(&self, keyboard_receiver: Receiver<KeyboardEvent>) {
+    fn event_loop(&mut self, keyboard_receiver: Receiver<KeyboardEvent>) {
         loop {
             if let Ok(event) = keyboard_receiver.recv_timeout(Duration::from_millis(100)) {
                 match event {
@@ -114,7 +107,7 @@ impl VoiceTypingApp {
         }
     }
 
-    fn toggle_recording(&self) {
+    fn toggle_recording(&mut self) {
         let mut session = self.recording_session.lock();
 
         if session.is_none() {
@@ -139,16 +132,12 @@ impl VoiceTypingApp {
             info!("Stopping recording");
             if let Some(recording_session) = session.take() {
                 drop(session);
-
-                let app = self.clone_arc();
-                thread::spawn(move || {
-                    app.process_recording(recording_session);
-                });
+                self.process_recording(recording_session);
             }
         }
     }
 
-    fn process_recording(&self, session: RecordingSession) {
+    fn process_recording(&mut self, session: RecordingSession) {
         self.ui_feedback.update_status(
             AppStatus::Processing,
             "Processing...".to_string(),
@@ -235,19 +224,6 @@ impl VoiceTypingApp {
         );
     }
 
-    fn clone_arc(&self) -> Arc<Self> {
-        Arc::new(Self {
-            settings: self.settings.clone(),
-            audio_recorder: self.audio_recorder.clone(),
-            stt_client: self.stt_client.clone(),
-            text_inserter: self.text_inserter.clone(),
-            history: self.history.clone(),
-            ui_feedback: self.ui_feedback.clone(),
-            tray_manager: self.tray_manager.clone(),
-            recording_session: self.recording_session.clone(),
-            last_recording_path: self.last_recording_path.clone(),
-        })
-    }
 }
 
 fn main() -> Result<()> {

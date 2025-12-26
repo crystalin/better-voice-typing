@@ -97,7 +97,7 @@ impl SttClient {
             }
 
             for field in &["text", "transcription", "result", "transcript", "output", "response", "data"] {
-                if let Some(value) = obj.get(field) {
+                if let Some(value) = obj.get(*field) {
                     if let Some(text) = value.as_str() {
                         return Ok(text.to_string());
                     }
