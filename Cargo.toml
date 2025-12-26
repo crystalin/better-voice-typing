@@ -1,0 +1,60 @@
+[package]
+name = "voice-typing"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Audio recording
+cpal = "0.15"
+hound = "3.5"
+
+# HTTP client for STT API
+reqwest = { version = "0.12", features = ["blocking", "multipart", "json"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Windows-specific
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_System_Threading",
+    "Win32_Graphics_Gdi",
+    "Win32_UI_Shell",
+    "Win32_System_LibraryLoader",
+    "Win32_UI_HiDpi",
+] }
+
+# System tray
+tray-icon = "0.13"
+
+# Clipboard and keyboard
+arboard = "3.4"
+enigo = "0.2"
+
+# Threading and async
+parking_lot = "0.12"
+crossbeam-channel = "0.5"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# Date/time
+chrono = { version = "0.4", features = ["serde"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+
+[[bin]]
+name = "voice-typing"
+path = "src/main.rs"
